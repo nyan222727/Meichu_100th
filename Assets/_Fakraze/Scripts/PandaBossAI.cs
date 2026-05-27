@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PandaBossAI : MonoBehaviour
@@ -11,7 +12,7 @@ public class PandaBossAI : MonoBehaviour
     public float maxAngularSpeed = 60f;
     // Minimum angular speed (degrees/sec) when angle error is at or below `minAngleForSpeed`.
     public float minAngularSpeed = 30f;
-    // Angle (degrees) at which angular speed equals `minAngularSpeed`.
+    // Angle (degrees) at which angular speed equals `minAngleForSpeed`.
     public float minAngleForSpeed = 30f;
     // Angle (degrees) at which angular speed equals `maxAngularSpeed`.
     public float maxAngleForSpeed = 90f;
@@ -39,6 +40,17 @@ public class PandaBossAI : MonoBehaviour
     public float plumProjectileSpeed = 6f;
     public float plumWindupTime = 0.3f;
 
+    [Header("Meatball Meteor Attack")]
+    public GameObject meatballMeteorPrefab;
+    public float meteorInterval = 6.0f;
+    public int meteorCount = 3;
+    public float meteorSpawnDelay = 0.25f;
+    public float meteorSpawnHeight = 10f;
+    public float meteorRadiusAroundPlayer = 4f;
+    public float meteorMinDistanceBetweenTargets = 3f;
+    public int meteorTargetSearchAttempts = 30;
+    public LayerMask groundLayer;
+
     [Header("Attack Cooldown")]
     public float clawCooldown = 2.0f;
     public float plumCooldown = 3.0f;
@@ -48,6 +60,7 @@ public class PandaBossAI : MonoBehaviour
 
     private float clawTimer = 0f;
     private float plumTimer = 0f;
+    private float meteorTimer = 0f;
 
     private bool isAttacking = false;
 
@@ -109,6 +122,13 @@ public class PandaBossAI : MonoBehaviour
             return;
         }
 
+        // 貢丸隕石是定期的場地壓力技能，優先於一般遠距離攻擊
+        if (meteorTimer <= 0f)
+        {
+            TryMeteorAttack();
+            return;
+        }
+
         if (distance <= clawRange)
         {
             TryClawAttack();
@@ -129,6 +149,11 @@ public class PandaBossAI : MonoBehaviour
         if (plumTimer > 0f)
         {
             plumTimer -= Time.deltaTime;
+        }
+
+        if (meteorTimer > 0f)
+        {
+            meteorTimer -= Time.deltaTime;
         }
     }
 
@@ -330,6 +355,166 @@ public class PandaBossAI : MonoBehaviour
         {
             Debug.LogWarning("PandaBossAI: PlumProjectile.cs is not attached to the projectile prefab.");
         }
+    }
+
+    private void TryMeteorAttack()
+    {
+        if (meteorTimer > 0f) return;
+
+        meteorTimer = meteorInterval;
+
+        StartCoroutine(MeteorAttackRoutine());
+    }
+
+    private IEnumerator MeteorAttackRoutine()
+    {
+        isAttacking = true;
+
+        Debug.Log("Panda Boss summons Meatball Meteors!");
+
+        List<Vector3> targetPositions = GetNonOverlappingMeteorTargetPositions();
+
+        for (int i = 0; i < targetPositions.Count; i++)
+        {
+            SpawnMeteor(targetPositions[i]);
+
+            yield return new WaitForSeconds(meteorSpawnDelay);
+        }
+
+        // 熊貓只負責召喚；warning、掉落、撞擊傷害全部交給 Meteor.cs 自己處理。
+        isAttacking = false;
+    }
+
+    private void SpawnMeteor(Vector3 targetPosition)
+    {
+        if (meatballMeteorPrefab == null)
+        {
+            Debug.LogWarning("PandaBossAI: Meatball Meteor Prefab is missing.");
+            return;
+        }
+
+        Vector3 spawnPosition = targetPosition + Vector3.up * meteorSpawnHeight;
+
+        GameObject meteorObj = Instantiate(
+            meatballMeteorPrefab,
+            spawnPosition,
+            Quaternion.identity
+        );
+
+        Meteor meteor = meteorObj.GetComponent<Meteor>();
+
+        if (meteor != null)
+        {
+            meteor.Init(targetPosition);
+        }
+        else
+        {
+            Debug.LogWarning("PandaBossAI: Meteor.cs is not attached to the meatball meteor prefab.");
+        }
+    }
+
+    private Vector3 GetMeteorTargetPosition()
+    {
+        if (player == null)
+        {
+            return transform.position;
+        }
+
+        Vector2 randomCircle = Random.insideUnitCircle * meteorRadiusAroundPlayer;
+
+        Vector3 randomPosition = player.position + new Vector3(
+            randomCircle.x,
+            0f,
+            randomCircle.y
+        );
+
+        Ray ray = new Ray(randomPosition + Vector3.up * 20f, Vector3.down);
+
+        if (Physics.Raycast(ray, out RaycastHit hit, 50f, groundLayer))
+        {
+            return hit.point;
+        }
+
+        // 如果沒有設定 Ground Layer 或射線沒有打到地板，就退回玩家附近的位置
+        return new Vector3(randomPosition.x, player.position.y, randomPosition.z);
+    }
+
+    private List<Vector3> GetNonOverlappingMeteorTargetPositions()
+    {
+        List<Vector3> targets = new List<Vector3>();
+
+        if (meteorCount <= 0)
+        {
+            return targets;
+        }
+
+        float minDistance = Mathf.Max(meteorMinDistanceBetweenTargets, 0f);
+        int maxAttemptsPerMeteor = Mathf.Max(meteorTargetSearchAttempts, 1);
+
+        for (int i = 0; i < meteorCount; i++)
+        {
+            bool foundValidPosition = false;
+            Vector3 bestCandidate = player != null ? player.position : transform.position;
+            float bestDistanceScore = -1f;
+
+            for (int attempt = 0; attempt < maxAttemptsPerMeteor; attempt++)
+            {
+                Vector3 candidate = GetMeteorTargetPosition();
+                float nearestDistance = GetNearestHorizontalDistance(candidate, targets);
+
+                if (targets.Count == 0 || nearestDistance >= minDistance)
+                {
+                    targets.Add(candidate);
+                    foundValidPosition = true;
+                    break;
+                }
+
+                if (nearestDistance > bestDistanceScore)
+                {
+                    bestDistanceScore = nearestDistance;
+                    bestCandidate = candidate;
+                }
+            }
+
+            if (!foundValidPosition)
+            {
+                // 如果半徑太小或隕石數太多，找不到完全不重疊的位置時，
+                // 退而求其次選擇目前嘗試中離其他落點最遠的位置。
+                targets.Add(bestCandidate);
+
+                Debug.LogWarning(
+                    "PandaBossAI: Could not find a fully non-overlapping meteor target. " +
+                    "Consider increasing Meteor Radius Around Player or reducing Meteor Count."
+                );
+            }
+        }
+
+        return targets;
+    }
+
+    private float GetNearestHorizontalDistance(Vector3 candidate, List<Vector3> existingTargets)
+    {
+        if (existingTargets.Count == 0)
+        {
+            return float.MaxValue;
+        }
+
+        float nearestDistance = float.MaxValue;
+
+        for (int i = 0; i < existingTargets.Count; i++)
+        {
+            Vector2 candidateXZ = new Vector2(candidate.x, candidate.z);
+            Vector2 existingXZ = new Vector2(existingTargets[i].x, existingTargets[i].z);
+
+            float distance = Vector2.Distance(candidateXZ, existingXZ);
+
+            if (distance < nearestDistance)
+            {
+                nearestDistance = distance;
+            }
+        }
+
+        return nearestDistance;
     }
 
     private void OnDrawGizmosSelected()
