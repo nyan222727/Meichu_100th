@@ -24,7 +24,7 @@ Assets/
 │   ├── Prefabs/
 │   ├── Scripts/
 │   └── YoyoScene
-├── _Shared/
+├── _Share/
 │   ├── BuildTest
 │   └── Document
 ├── Settings/
