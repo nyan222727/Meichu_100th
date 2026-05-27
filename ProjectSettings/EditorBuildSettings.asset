@@ -9,5 +9,12 @@ EditorBuildSettings:
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:
+    NianticSpatial.NSDK.AR.AuthBuildSettings: {fileID: 11400000, guid: 0bef13848d6c31342bc2615be7833e04, type: 2}
+    NianticSpatial.NSDK.AR.NsdkSettings: {fileID: 11400000, guid: 87429f9533788194b8ef0cba370e444a, type: 2}
+    UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: de49767daf52a8f41976bd0cf3080d78, type: 2}
+    UnityEditor.XR.ARKit.ARKitSettings: {fileID: 11400000, guid: d33bf0c123e050b4a9066a2dd894118b, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+    com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 2df684bb203f67049bb5075468778140, type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 33610f11e5bb83b4f84c3b74f4f6a76d, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: c16dc5a44db4d5547819ad740e802af9, type: 2}
   m_UseUCBPForAssetBundles: 0
