@@ -7,9 +7,14 @@ public class PandaBossAI : MonoBehaviour
     public Transform player;
 
     [Header("Boss Settings")]
-    public float rotateSpeed = 60f;
+    // Maximum angular speed (degrees/sec) when angle error is at or above `maxAngleForSpeed`.
+    public float maxAngularSpeed = 60f;
+    // Minimum angular speed (degrees/sec) when angle error is at or below `minAngleForSpeed`.
     public float minAngularSpeed = 30f;
-    public float angleForMaxSpeed = 90f;
+    // Angle (degrees) at which angular speed equals `minAngularSpeed`.
+    public float minAngleForSpeed = 30f;
+    // Angle (degrees) at which angular speed equals `maxAngularSpeed`.
+    public float maxAngleForSpeed = 90f;
     public float faceOffsetY = 180f;
 
     [Header("Attack Range")]
@@ -140,10 +145,13 @@ public class PandaBossAI : MonoBehaviour
 
         float angleToTarget = Quaternion.Angle(transform.rotation, targetRotation);
 
-        float maxSpeed = Mathf.Max(rotateSpeed, minAngularSpeed);
-        float minSpeed = Mathf.Min(rotateSpeed, minAngularSpeed);
+        float maxSpeed = Mathf.Max(maxAngularSpeed, minAngularSpeed);
+        float minSpeed = Mathf.Min(maxAngularSpeed, minAngularSpeed);
 
-        float t = Mathf.Clamp01(angleToTarget / Mathf.Max(angleForMaxSpeed, 0.001f));
+        float angleRange = Mathf.Max(maxAngleForSpeed - minAngleForSpeed, 0.001f);
+        float t = (angleToTarget - minAngleForSpeed) / angleRange;
+        t = Mathf.Clamp01(t);
+
         float angularSpeed = Mathf.Lerp(minSpeed, maxSpeed, t);
         float maxStep = angularSpeed * Time.deltaTime;
 
