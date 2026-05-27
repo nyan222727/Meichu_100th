@@ -5,9 +5,12 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
-    path: Assets/_Shared/BuildTest.unity
+  - enabled: 0
+    path: Assets/_Share/BuildTest.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/_Nyan/NsdkTest.unity
+    guid: e97b7ef41ff05fa4aaa9e0a11860f70d
   m_configObjects:
     NianticSpatial.NSDK.AR.AuthBuildSettings: {fileID: 11400000, guid: 0bef13848d6c31342bc2615be7833e04, type: 2}
     NianticSpatial.NSDK.AR.NsdkSettings: {fileID: 11400000, guid: 87429f9533788194b8ef0cba370e444a, type: 2}
