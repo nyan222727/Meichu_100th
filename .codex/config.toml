@@ -1,0 +1,21 @@
+web_search = "live"
+
+[tools.web_search]
+allowed_domains = [
+  "nianticspatial.com",
+  "docs.unity3d.com",
+  "github.com",
+  "codelabs.developers.google.com"
+]
+
+[mcp_servers.mcp-unity]
+command = "node"
+args = ["Library/PackageCache/com.gamelovers.mcp-unity@a32e47d4ec87/Server~/build/index.js"]
+
+[mcp_servers.mcp-unity.tools.get_scene_info]
+approval_mode = "approve"
+
+[mcp_servers.mcp-unity.tools.get_gameobject]
+approval_mode = "approve"
+
+
