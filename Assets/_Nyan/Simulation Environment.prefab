@@ -1174,7 +1174,7 @@ MonoBehaviour:
     position: {x: 0, y: 0, z: 0}
     rotation: {x: -0.16794881, y: 0.414527, z: -0.078137435, w: -0.8909855}
   m_CameraMovementBounds:
-    m_Center: {x: 0.044999838, y: 0.545, z: 0.00000011920929}
+    m_Center: {x: 0.04499984, y: 0.545, z: 0.00000011920929}
     m_Extent: {x: 1000, y: 1000, z: 1000}
   m_DefaultViewPose:
     position: {x: 0, y: 1.0609863, z: -1.5}
