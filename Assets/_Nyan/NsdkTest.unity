@@ -816,6 +816,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   projectilePrefab: {fileID: 7893982696271944567, guid: 891d34131d129c842afe7611b9f92ae3, type: 3}
   launchPoint: {fileID: 1533365157}
+  useLaunchPointOverride: 0
   attackModeSplitY: 0.5
   chargeCenterViewport: {x: 0.5, y: 0.5}
   blueRadius: 0.055

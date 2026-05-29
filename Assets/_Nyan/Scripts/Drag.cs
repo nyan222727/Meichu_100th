@@ -22,6 +22,7 @@ public class Drag : MonoBehaviour
     [Header("Projectile")]
     [SerializeField] private Rigidbody projectilePrefab;
     [SerializeField] private Transform launchPoint;
+    [SerializeField] private bool useLaunchPointOverride;
 
     [Header("Screen Controls")]
     [SerializeField, Range(0.05f, 0.95f)] private float attackModeSplitY = 0.5f;
@@ -285,14 +286,18 @@ public class Drag : MonoBehaviour
 
     private Vector3 GetLaunchPosition()
     {
-        if (launchPoint != null)
+        if (useLaunchPointOverride && launchPoint != null)
         {
             return launchPoint.position;
         }
 
         Transform cameraTransform = mainCamera.transform;
-        return cameraTransform.position
-            + (cameraTransform.forward * launchDistanceFromCamera)
+        Vector3 viewportPosition = new Vector3(
+            chargeCenterViewport.x,
+            chargeCenterViewport.y,
+            launchDistanceFromCamera);
+
+        return mainCamera.ViewportToWorldPoint(viewportPosition)
             + (cameraTransform.up * launchVerticalOffset);
     }
 
