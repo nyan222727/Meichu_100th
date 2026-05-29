@@ -22,7 +22,7 @@ public class Launcher : MonoBehaviour
         var forw = cameraTransform.forward;
         var thing = Instantiate(_prefabWithRigidbody, pos + (forw * 0.4f), Quaternion.identity);
 
-        thing.AddForce(forw * 200.0f);
+        thing.AddForce(forw * 1000.0f);
     }
 
     private static bool WasTapped()

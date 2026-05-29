@@ -5,7 +5,7 @@ public class PandaPlacement : MonoBehaviour
     [SerializeField] private GameObject pandaPrefab;
     [SerializeField] private ReticleBehaviour reticle;
     [SerializeField] private DrivingSurfaceManager drivingSurfaceManager;
-    [SerializeField] private Launcher projectileLauncher;
+    [SerializeField] private Drag projectileLauncher;
     [SerializeField] private bool lockPlaneAfterPlacement = true;
     [SerializeField] private bool hideReticleAfterPlacement = true;
 
@@ -24,6 +24,7 @@ public class PandaPlacement : MonoBehaviour
         }
 
         spawnedPanda = Instantiate(pandaPrefab, reticle.transform.position, reticle.transform.rotation);
+        EnsurePandaHealth(spawnedPanda);
 
         if (lockPlaneAfterPlacement && drivingSurfaceManager != null)
         {
@@ -33,6 +34,11 @@ public class PandaPlacement : MonoBehaviour
         if (hideReticleAfterPlacement)
         {
             reticle.gameObject.SetActive(false);
+        }
+
+        if (projectileLauncher == null)
+        {
+            projectileLauncher = FindFirstObjectByType<Drag>(FindObjectsInactive.Include);
         }
 
         if (projectileLauncher != null)
@@ -54,5 +60,15 @@ public class PandaPlacement : MonoBehaviour
         }
 
         return Input.GetTouch(0).phase == TouchPhase.Began;
+    }
+
+    private static void EnsurePandaHealth(GameObject panda)
+    {
+        if (panda.GetComponentInChildren<PandaHealth>() != null)
+        {
+            return;
+        }
+
+        panda.AddComponent<PandaHealth>();
     }
 }
