@@ -158,23 +158,19 @@ public class Drag : MonoBehaviour
 
     private void BeginDrag(Vector2 viewportPosition)
     {
-        currentAttackMode = GetAttackMode(viewportPosition);
-
-        if (currentAttackMode == AttackMode.Ranged && GetChargeZone(viewportPosition) != ChargeZone.Blue)
-        {
-            currentAttackMode = AttackMode.None;
-        }
-
-        isDragging = currentAttackMode != AttackMode.None;
+        currentAttackMode = AttackMode.None;
+        isDragging = GetChargeZone(viewportPosition) == ChargeZone.Blue;
 
         if (logAttacks && !isDragging)
         {
-            Debug.Log("[PlayerAttack] Drag ignored. Start in blue ranged zone or upper melee area.");
+            Debug.Log("[PlayerAttack] Drag ignored. Start in the shared blue zone.");
         }
     }
 
     private void ReleaseDrag(Vector2 viewportPosition)
     {
+        currentAttackMode = GetAttackMode(viewportPosition);
+
         if (currentAttackMode == AttackMode.Ranged)
         {
             ReleaseRangedAttack(viewportPosition);
@@ -407,7 +403,7 @@ public class Drag : MonoBehaviour
         };
 
         GUI.color = Color.white;
-        GUI.Label(new Rect(16f, 12f, Screen.width - 32f, 34f), "Upper: melee | Lower: bow. Start in BLUE, release GREEN/YELLOW/RED.", style);
+        GUI.Label(new Rect(16f, 12f, Screen.width - 32f, 34f), "Start in BLUE. Release lower for bow, upper for melee. Green/Yellow/Red sets bow power.", style);
 
         if (!hasPointerPosition)
         {
