@@ -304,7 +304,7 @@ public class Drag : MonoBehaviour
 
     private ChargeZone GetChargeZone(Vector2 viewportPosition)
     {
-        float distance = Vector2.Distance(viewportPosition, chargeCenterViewport);
+        float distance = GetChargeDistance(viewportPosition);
 
         if (distance <= blueRadius)
         {
@@ -327,6 +327,13 @@ public class Drag : MonoBehaviour
         }
 
         return ChargeZone.Outside;
+    }
+
+    private float GetChargeDistance(Vector2 viewportPosition)
+    {
+        Vector2 screenPosition = ViewportToScreenPoint(viewportPosition);
+        Vector2 centerPosition = ViewportToScreenPoint(chargeCenterViewport);
+        return Vector2.Distance(screenPosition, centerPosition) / GetChargeRadiusScale();
     }
 
     private Vector2 ScreenToViewport(Vector2 screenPosition)
@@ -368,9 +375,8 @@ public class Drag : MonoBehaviour
     private void DrawChargeRing(float viewportRadius, Color color)
     {
         Vector2 center = ViewportToGuiPoint(chargeCenterViewport);
-        float radiusX = viewportRadius * Screen.width;
-        float radiusY = viewportRadius * Screen.height;
-        DrawEllipse(center, radiusX, radiusY, color, overlayLineWidth);
+        float radius = viewportRadius * GetChargeRadiusScale();
+        DrawEllipse(center, radius, radius, color, overlayLineWidth);
     }
 
     private void DrawCrosshair()
@@ -423,6 +429,18 @@ public class Drag : MonoBehaviour
         return new Vector2(
             viewportPosition.x * Screen.width,
             (1f - viewportPosition.y) * Screen.height);
+    }
+
+    private static Vector2 ViewportToScreenPoint(Vector2 viewportPosition)
+    {
+        return new Vector2(
+            viewportPosition.x * Screen.width,
+            viewportPosition.y * Screen.height);
+    }
+
+    private static float GetChargeRadiusScale()
+    {
+        return Mathf.Max(1f, Mathf.Min(Screen.width, Screen.height));
     }
 
     private void DrawEllipse(Vector2 center, float radiusX, float radiusY, Color color, float width)
