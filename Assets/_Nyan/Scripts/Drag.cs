@@ -47,6 +47,17 @@ public class Drag : MonoBehaviour
     [SerializeField] private int meleeDamage = 15;
     [SerializeField] private LayerMask meleeHitMask = ~0;
 
+    [Header("Fox Ultimate")]
+    [SerializeField] private GameObject foxPrefab;
+    [SerializeField] private float ultimateSpawnMinDelay = 2.5f;
+    [SerializeField] private float ultimateSpawnMaxDelay = 5.5f;
+    [SerializeField] private float ultimateVisibleDuration = 1.1f;
+    [SerializeField] private float ultimateTargetRadius = 0.045f;
+    [SerializeField] private float ultimateOuterMinRadius = 0.25f;
+    [SerializeField] private float ultimateOuterMaxRadius = 0.36f;
+    [SerializeField] private float ultimateSpawnDistanceFromCamera = 1.1f;
+    [SerializeField] private int ultimateFoxDamage = 45;
+
     [Header("Debug")]
     [SerializeField] private bool logAttacks = true;
     [SerializeField] private bool showDebugOverlay = true;
@@ -58,6 +69,10 @@ public class Drag : MonoBehaviour
     private AttackMode currentAttackMode;
     private bool hasPointerPosition;
     private Vector2 lastPointerViewportPosition;
+    private bool hasUltimateTarget;
+    private float nextUltimateTargetTime;
+    private float ultimateTargetExpiresAt;
+    private Vector2 ultimateTargetViewportPosition;
 
     private void OnValidate()
     {
@@ -72,12 +87,16 @@ public class Drag : MonoBehaviour
         greenRadius = Mathf.Max(greenRadius, blueRadius);
         yellowRadius = Mathf.Max(yellowRadius, greenRadius);
         redRadius = Mathf.Max(redRadius, yellowRadius);
+        ultimateTargetRadius = Mathf.Max(0.01f, ultimateTargetRadius);
+        ultimateOuterMinRadius = Mathf.Max(ultimateOuterMinRadius, redRadius + ultimateTargetRadius);
+        ultimateOuterMaxRadius = Mathf.Max(ultimateOuterMaxRadius, ultimateOuterMinRadius);
     }
 
     private void OnEnable()
     {
         mainCamera = Camera.main;
         ResetInputState();
+        ScheduleNextUltimateTarget();
     }
 
     private void Update()
@@ -91,7 +110,27 @@ public class Drag : MonoBehaviour
             }
         }
 
+        UpdateUltimateTarget();
         HandlePointerInput();
+    }
+
+    private void UpdateUltimateTarget()
+    {
+        if (hasUltimateTarget)
+        {
+            if (Time.time >= ultimateTargetExpiresAt)
+            {
+                hasUltimateTarget = false;
+                ScheduleNextUltimateTarget();
+            }
+
+            return;
+        }
+
+        if (Time.time >= nextUltimateTargetTime)
+        {
+            SpawnUltimateTarget();
+        }
     }
 
     private void HandlePointerInput()
@@ -169,6 +208,12 @@ public class Drag : MonoBehaviour
 
     private void ReleaseDrag(Vector2 viewportPosition)
     {
+        if (TryTriggerUltimate(viewportPosition))
+        {
+            ResetInputState();
+            return;
+        }
+
         currentAttackMode = GetAttackMode(viewportPosition);
 
         if (currentAttackMode == AttackMode.Ranged)
@@ -181,6 +226,24 @@ public class Drag : MonoBehaviour
         }
 
         ResetInputState();
+    }
+
+    private bool TryTriggerUltimate(Vector2 viewportPosition)
+    {
+        if (!hasUltimateTarget)
+        {
+            return false;
+        }
+
+        if (GetUltimateDistance(viewportPosition) > ultimateTargetRadius)
+        {
+            return false;
+        }
+
+        SummonFox();
+        hasUltimateTarget = false;
+        ScheduleNextUltimateTarget();
+        return true;
     }
 
     private void ReleaseRangedAttack(Vector2 viewportPosition)
@@ -297,6 +360,91 @@ public class Drag : MonoBehaviour
             + (cameraTransform.up * launchVerticalOffset);
     }
 
+    private void ScheduleNextUltimateTarget()
+    {
+        float minDelay = Mathf.Max(0.1f, ultimateSpawnMinDelay);
+        float maxDelay = Mathf.Max(minDelay, ultimateSpawnMaxDelay);
+        nextUltimateTargetTime = Time.time + Random.Range(minDelay, maxDelay);
+    }
+
+    private void SpawnUltimateTarget()
+    {
+        float angle = Random.Range(0f, Mathf.PI * 2f);
+        float radius = Random.Range(ultimateOuterMinRadius, ultimateOuterMaxRadius) * GetChargeRadiusScale();
+        Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+        Vector2 targetScreenPosition = ViewportToScreenPoint(chargeCenterViewport) + (direction * radius);
+
+        ultimateTargetViewportPosition = ScreenToViewport(ClampUltimateTargetToScreen(targetScreenPosition));
+        hasUltimateTarget = true;
+        ultimateTargetExpiresAt = Time.time + Mathf.Max(0.1f, ultimateVisibleDuration);
+
+        if (logAttacks)
+        {
+            Debug.Log("[PlayerAttack] Fox ultimate target appeared.");
+        }
+    }
+
+    private Vector2 ClampUltimateTargetToScreen(Vector2 screenPosition)
+    {
+        float margin = ultimateTargetRadius * GetChargeRadiusScale();
+        return new Vector2(
+            Mathf.Clamp(screenPosition.x, margin, Screen.width - margin),
+            Mathf.Clamp(screenPosition.y, margin, Screen.height - margin));
+    }
+
+    private float GetUltimateDistance(Vector2 viewportPosition)
+    {
+        Vector2 screenPosition = ViewportToScreenPoint(viewportPosition);
+        Vector2 targetPosition = ViewportToScreenPoint(ultimateTargetViewportPosition);
+        return Vector2.Distance(screenPosition, targetPosition) / GetChargeRadiusScale();
+    }
+
+    private void SummonFox()
+    {
+        GameObject fox = foxPrefab != null
+            ? Instantiate(foxPrefab, GetUltimateWorldPosition(), Quaternion.identity)
+            : CreatePlaceholderFox(GetUltimateWorldPosition());
+
+        FoxBehaviour foxBehaviour = fox.GetComponent<FoxBehaviour>();
+        if (foxBehaviour == null)
+        {
+            foxBehaviour = fox.AddComponent<FoxBehaviour>();
+        }
+
+        foxBehaviour.Initialize(FindFirstObjectByType<PandaHealth>(), ultimateFoxDamage);
+
+        if (logAttacks)
+        {
+            Debug.Log("[PlayerAttack] Fox ultimate summoned.");
+        }
+    }
+
+    private Vector3 GetUltimateWorldPosition()
+    {
+        Vector3 viewportPosition = new Vector3(
+            ultimateTargetViewportPosition.x,
+            ultimateTargetViewportPosition.y,
+            ultimateSpawnDistanceFromCamera);
+
+        return mainCamera.ViewportToWorldPoint(viewportPosition);
+    }
+
+    private static GameObject CreatePlaceholderFox(Vector3 spawnPosition)
+    {
+        GameObject fox = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        fox.name = "Fox Ultimate";
+        fox.transform.position = spawnPosition;
+        fox.transform.localScale = new Vector3(0.25f, 0.25f, 0.45f);
+
+        Renderer renderer = fox.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            renderer.material.color = new Color(1f, 0.35f, 0.05f, 1f);
+        }
+
+        return fox;
+    }
+
     private AttackMode GetAttackMode(Vector2 viewportPosition)
     {
         return viewportPosition.y <= attackModeSplitY ? AttackMode.Ranged : AttackMode.Melee;
@@ -361,6 +509,7 @@ public class Drag : MonoBehaviour
         DrawChargeRing(yellowRadius, new Color(1f, 0.85f, 0.1f, 0.9f));
         DrawChargeRing(greenRadius, new Color(0.2f, 0.9f, 0.2f, 0.9f));
         DrawChargeRing(blueRadius, new Color(0.1f, 0.45f, 1f, 0.95f));
+        DrawUltimateTarget();
         DrawCrosshair();
         DrawPointerMarker();
         DrawOverlayLabels();
@@ -398,6 +547,23 @@ public class Drag : MonoBehaviour
         float size = 14f;
         DrawLine(point + new Vector2(-size, -size), point + new Vector2(size, size), Color.magenta, overlayLineWidth);
         DrawLine(point + new Vector2(-size, size), point + new Vector2(size, -size), Color.magenta, overlayLineWidth);
+    }
+
+    private void DrawUltimateTarget()
+    {
+        if (!hasUltimateTarget)
+        {
+            return;
+        }
+
+        float flash = Mathf.PingPong(Time.time * 8f, 1f);
+        Color color = Color.Lerp(new Color(1f, 0.45f, 0f, 0.75f), new Color(1f, 0.95f, 0f, 1f), flash);
+        Vector2 center = ViewportToGuiPoint(ultimateTargetViewportPosition);
+        float radius = ultimateTargetRadius * GetChargeRadiusScale();
+
+        DrawEllipse(center, radius, radius, color, overlayLineWidth + 2f);
+        DrawLine(center + Vector2.left * radius, center + Vector2.right * radius, color, overlayLineWidth);
+        DrawLine(center + Vector2.down * radius, center + Vector2.up * radius, color, overlayLineWidth);
     }
 
     private void DrawOverlayLabels()

@@ -836,6 +836,15 @@ MonoBehaviour:
   meleeHitMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  foxPrefab: {fileID: 0}
+  ultimateSpawnMinDelay: 2.5
+  ultimateSpawnMaxDelay: 5.5
+  ultimateVisibleDuration: 1.1
+  ultimateTargetRadius: 0.045
+  ultimateOuterMinRadius: 0.26
+  ultimateOuterMaxRadius: 0.36
+  ultimateSpawnDistanceFromCamera: 1.1
+  ultimateFoxDamage: 45
   logAttacks: 1
   showDebugOverlay: 1
   overlaySegments: 96
