@@ -27,10 +27,10 @@ public class Drag : MonoBehaviour
     [Header("Screen Controls")]
     [SerializeField, Range(0.05f, 0.95f)] private float attackModeSplitY = 0.5f;
     [SerializeField] private Vector2 chargeCenterViewport = new Vector2(0.5f, 0.5f);
-    [SerializeField, Range(0.01f, 0.5f)] private float blueRadius = 0.055f;
-    [SerializeField, Range(0.01f, 0.5f)] private float greenRadius = 0.105f;
-    [SerializeField, Range(0.01f, 0.5f)] private float yellowRadius = 0.155f;
-    [SerializeField, Range(0.01f, 0.5f)] private float redRadius = 0.215f;
+    [SerializeField, Range(0.01f, 0.5f)] private float blueRadius = 0.15f;
+    [SerializeField, Range(0.01f, 0.5f)] private float greenRadius = 0.18f;
+    [SerializeField, Range(0.01f, 0.5f)] private float yellowRadius = 0.235f;
+    [SerializeField, Range(0.01f, 0.5f)] private float redRadius = 0.29f;
 
     [Header("Ranged Launch")]
     [SerializeField] private float launchDistanceFromCamera = 0.65f;
@@ -41,6 +41,13 @@ public class Drag : MonoBehaviour
     [SerializeField] private int weakDamage = 10;
     [SerializeField] private int mediumDamage = 20;
     [SerializeField] private int strongDamage = 30;
+
+    [Header("Blue Charge")]
+    [SerializeField] private float chargeDistanceForMax = 0.32f;
+    [SerializeField] private float minChargeMultiplier = 1f;
+    [SerializeField] private float maxChargeMultiplier = 2f;
+    [SerializeField, Range(-1f, 1f)] private float reverseDirectionDotThreshold = 0.4f;
+    [SerializeField] private float reverseInvalidationGraceDistance = 0.015f;
 
     [Header("Melee")]
     [SerializeField] private float meleeRange = 1.2f;
@@ -53,8 +60,8 @@ public class Drag : MonoBehaviour
     [SerializeField] private float ultimateSpawnMaxDelay = 5.5f;
     [SerializeField] private float ultimateVisibleDuration = 1.1f;
     [SerializeField] private float ultimateTargetRadius = 0.045f;
-    [SerializeField] private float ultimateOuterMinRadius = 0.25f;
-    [SerializeField] private float ultimateOuterMaxRadius = 0.36f;
+    [SerializeField] private float ultimateOuterMinRadius = 0.35f;
+    [SerializeField] private float ultimateOuterMaxRadius = 0.43f;
     [SerializeField] private float ultimateSpawnDistanceFromCamera = 1.1f;
     [SerializeField] private int ultimateFoxDamage = 45;
 
@@ -73,20 +80,30 @@ public class Drag : MonoBehaviour
     private float nextUltimateTargetTime;
     private float ultimateTargetExpiresAt;
     private Vector2 ultimateTargetViewportPosition;
+    private bool hasExitedBlueZone;
+    private bool chargeInvalidated;
+    private float accumulatedChargeDistance;
+    private float currentChargeMultiplier = 1f;
+    private Vector2 previousDragViewportPosition;
+    private Vector2 blueExitDirection;
 
     private void OnValidate()
     {
         if (blueRadius > 0.5f || greenRadius > 0.5f || yellowRadius > 0.5f || redRadius > 0.5f)
         {
-            blueRadius = 0.055f;
-            greenRadius = 0.105f;
-            yellowRadius = 0.155f;
-            redRadius = 0.215f;
+            blueRadius = 0.15f;
+            greenRadius = 0.18f;
+            yellowRadius = 0.235f;
+            redRadius = 0.29f;
         }
 
         greenRadius = Mathf.Max(greenRadius, blueRadius);
         yellowRadius = Mathf.Max(yellowRadius, greenRadius);
         redRadius = Mathf.Max(redRadius, yellowRadius);
+        chargeDistanceForMax = Mathf.Max(0.01f, chargeDistanceForMax);
+        minChargeMultiplier = Mathf.Max(0f, minChargeMultiplier);
+        maxChargeMultiplier = Mathf.Max(maxChargeMultiplier, minChargeMultiplier);
+        reverseInvalidationGraceDistance = Mathf.Max(0f, reverseInvalidationGraceDistance);
         ultimateTargetRadius = Mathf.Max(0.01f, ultimateTargetRadius);
         ultimateOuterMinRadius = Mathf.Max(ultimateOuterMinRadius, redRadius + ultimateTargetRadius);
         ultimateOuterMaxRadius = Mathf.Max(ultimateOuterMaxRadius, ultimateOuterMinRadius);
@@ -155,6 +172,11 @@ public class Drag : MonoBehaviour
             BeginDrag(viewportPosition);
         }
 
+        if (isDragging && pointerHeld)
+        {
+            UpdateCharge(viewportPosition);
+        }
+
         if (isDragging && pointerUp)
         {
             ReleaseDrag(viewportPosition);
@@ -199,11 +221,55 @@ public class Drag : MonoBehaviour
     {
         currentAttackMode = AttackMode.None;
         isDragging = GetChargeZone(viewportPosition) == ChargeZone.Blue;
+        accumulatedChargeDistance = 0f;
+        currentChargeMultiplier = minChargeMultiplier;
+        chargeInvalidated = false;
+        hasExitedBlueZone = false;
+        blueExitDirection = Vector2.zero;
+        previousDragViewportPosition = viewportPosition;
 
         if (logAttacks && !isDragging)
         {
             Debug.Log("[PlayerAttack] Drag ignored. Start in the shared blue zone.");
         }
+    }
+
+    private void UpdateCharge(Vector2 viewportPosition)
+    {
+        float distanceFromCenter = GetChargeDistance(viewportPosition);
+
+        if (!hasExitedBlueZone)
+        {
+            if (distanceFromCenter <= blueRadius)
+            {
+                accumulatedChargeDistance += GetNormalizedScreenDistance(previousDragViewportPosition, viewportPosition);
+                currentChargeMultiplier = GetCurrentChargeMultiplier();
+            }
+            else
+            {
+                hasExitedBlueZone = true;
+                blueExitDirection = GetDirectionFromCenter(viewportPosition);
+            }
+        }
+        else if (!chargeInvalidated)
+        {
+            if (distanceFromCenter < blueRadius - reverseInvalidationGraceDistance)
+            {
+                chargeInvalidated = true;
+            }
+            else
+            {
+                Vector2 currentDirection = GetDirectionFromCenter(viewportPosition);
+                if (blueExitDirection != Vector2.zero && Vector2.Dot(currentDirection, blueExitDirection) <= reverseDirectionDotThreshold)
+                {
+                    chargeInvalidated = true;
+                }
+            }
+
+            currentChargeMultiplier = GetCurrentChargeMultiplier();
+        }
+
+        previousDragViewportPosition = viewportPosition;
     }
 
     private void ReleaseDrag(Vector2 viewportPosition)
@@ -235,6 +301,11 @@ public class Drag : MonoBehaviour
             return false;
         }
 
+        if (chargeInvalidated)
+        {
+            return false;
+        }
+
         if (GetUltimateDistance(viewportPosition) > ultimateTargetRadius)
         {
             return false;
@@ -253,13 +324,13 @@ public class Drag : MonoBehaviour
         switch (zone)
         {
             case ChargeZone.Green:
-                FireProjectile(weakImpulse, weakDamage);
+                FireProjectile(weakImpulse * currentChargeMultiplier, Mathf.RoundToInt(weakDamage * currentChargeMultiplier));
                 break;
             case ChargeZone.Yellow:
-                FireProjectile(mediumImpulse, mediumDamage);
+                FireProjectile(mediumImpulse * currentChargeMultiplier, Mathf.RoundToInt(mediumDamage * currentChargeMultiplier));
                 break;
             case ChargeZone.Red:
-                FireProjectile(strongImpulse, strongDamage);
+                FireProjectile(strongImpulse * currentChargeMultiplier, Mathf.RoundToInt(strongDamage * currentChargeMultiplier));
                 break;
             default:
                 if (logAttacks)
@@ -484,6 +555,30 @@ public class Drag : MonoBehaviour
         return Vector2.Distance(screenPosition, centerPosition) / GetChargeRadiusScale();
     }
 
+    private float GetNormalizedScreenDistance(Vector2 fromViewportPosition, Vector2 toViewportPosition)
+    {
+        Vector2 fromScreenPosition = ViewportToScreenPoint(fromViewportPosition);
+        Vector2 toScreenPosition = ViewportToScreenPoint(toViewportPosition);
+        return Vector2.Distance(fromScreenPosition, toScreenPosition) / GetChargeRadiusScale();
+    }
+
+    private Vector2 GetDirectionFromCenter(Vector2 viewportPosition)
+    {
+        Vector2 direction = ViewportToScreenPoint(viewportPosition) - ViewportToScreenPoint(chargeCenterViewport);
+        return direction.sqrMagnitude <= 0.0001f ? Vector2.zero : direction.normalized;
+    }
+
+    private float GetCurrentChargeMultiplier()
+    {
+        if (chargeInvalidated)
+        {
+            return minChargeMultiplier;
+        }
+
+        float chargeRatio = Mathf.Clamp01(accumulatedChargeDistance / chargeDistanceForMax);
+        return Mathf.Lerp(minChargeMultiplier, maxChargeMultiplier, chargeRatio);
+    }
+
     private Vector2 ScreenToViewport(Vector2 screenPosition)
     {
         return new Vector2(
@@ -495,6 +590,12 @@ public class Drag : MonoBehaviour
     {
         isDragging = false;
         currentAttackMode = AttackMode.None;
+        hasExitedBlueZone = false;
+        chargeInvalidated = false;
+        accumulatedChargeDistance = 0f;
+        currentChargeMultiplier = minChargeMultiplier;
+        previousDragViewportPosition = default;
+        blueExitDirection = Vector2.zero;
     }
 
     private void OnGUI()
@@ -575,7 +676,7 @@ public class Drag : MonoBehaviour
         };
 
         GUI.color = Color.white;
-        GUI.Label(new Rect(16f, 12f, Screen.width - 32f, 34f), "Start in BLUE. Release lower for bow, upper for melee. Green/Yellow/Red sets bow power.", style);
+        GUI.Label(new Rect(16f, 12f, Screen.width - 32f, 34f), "Start in BLUE. Move inside BLUE to charge. Release lower for bow, upper for melee.", style);
 
         if (!hasPointerPosition)
         {
@@ -584,9 +685,10 @@ public class Drag : MonoBehaviour
 
         AttackMode mode = GetAttackMode(lastPointerViewportPosition);
         ChargeZone zone = GetChargeZone(lastPointerViewportPosition);
+        string chargeText = chargeInvalidated ? "Invalid" : $"{currentChargeMultiplier:0.00}x";
         GUI.Label(
             new Rect(16f, 46f, Screen.width - 32f, 34f),
-            $"Pointer: {mode}, Zone: {zone}",
+            $"Pointer: {mode}, Zone: {zone}, Charge: {chargeText}",
             style);
     }
 

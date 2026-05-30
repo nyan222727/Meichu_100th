@@ -819,10 +819,10 @@ MonoBehaviour:
   useLaunchPointOverride: 0
   attackModeSplitY: 0.5
   chargeCenterViewport: {x: 0.5, y: 0.5}
-  blueRadius: 0.055
-  greenRadius: 0.105
-  yellowRadius: 0.155
-  redRadius: 0.215
+  blueRadius: 0.15
+  greenRadius: 0.18
+  yellowRadius: 0.235
+  redRadius: 0.29
   launchDistanceFromCamera: 0.65
   launchVerticalOffset: 0
   weakImpulse: 3.5
@@ -831,6 +831,11 @@ MonoBehaviour:
   weakDamage: 10
   mediumDamage: 20
   strongDamage: 30
+  chargeDistanceForMax: 0.32
+  minChargeMultiplier: 1
+  maxChargeMultiplier: 2
+  reverseDirectionDotThreshold: 0.4
+  reverseInvalidationGraceDistance: 0.015
   meleeRange: 1.2
   meleeDamage: 15
   meleeHitMask:
@@ -841,8 +846,8 @@ MonoBehaviour:
   ultimateSpawnMaxDelay: 5.5
   ultimateVisibleDuration: 1.1
   ultimateTargetRadius: 0.045
-  ultimateOuterMinRadius: 0.26
-  ultimateOuterMaxRadius: 0.36
+  ultimateOuterMinRadius: 0.35
+  ultimateOuterMaxRadius: 0.43
   ultimateSpawnDistanceFromCamera: 1.1
   ultimateFoxDamage: 45
   logAttacks: 1
