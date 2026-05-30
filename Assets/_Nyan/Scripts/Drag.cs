@@ -43,9 +43,9 @@ public class Drag : MonoBehaviour
     [SerializeField] private int strongDamage = 30;
 
     [Header("Blue Charge")]
-    [SerializeField] private float chargeDistanceForMax = 0.32f;
+    [SerializeField] private float chargeDistanceForMax = 6f;
     [SerializeField] private float minChargeMultiplier = 1f;
-    [SerializeField] private float maxChargeMultiplier = 2f;
+    [SerializeField] private float maxChargeMultiplier = 3f;
     [SerializeField, Range(-1f, 1f)] private float reverseDirectionDotThreshold = 0.4f;
     [SerializeField] private float reverseInvalidationGraceDistance = 0.015f;
 
@@ -65,11 +65,20 @@ public class Drag : MonoBehaviour
     [SerializeField] private float ultimateSpawnDistanceFromCamera = 1.1f;
     [SerializeField] private int ultimateFoxDamage = 45;
 
+    [Header("Player Health UI")]
+    [SerializeField] private int maxPlayerHealth = 100;
+    [SerializeField] private int currentPlayerHealth = 100;
+    [SerializeField, Range(0f, 0.2f)] private float healthBarCenterGap = 0.055f;
+    [SerializeField, Range(0f, 0.2f)] private float healthBarSideMargin = 0.035f;
+    [SerializeField, Range(4f, 28f)] private float healthBarWidth = 12f;
+    [SerializeField, Range(0.2f, 1f)] private float healthBarAlpha = 0.72f;
+
     [Header("Debug")]
     [SerializeField] private bool logAttacks = true;
     [SerializeField] private bool showDebugOverlay = true;
     [SerializeField, Range(24, 192)] private int overlaySegments = 96;
     [SerializeField, Range(1f, 8f)] private float overlayLineWidth = 3f;
+    [SerializeField, Range(0.02f, 0.35f)] private float chargeFillMaxAlpha = 0.16f;
 
     private Camera mainCamera;
     private bool isDragging;
@@ -100,9 +109,12 @@ public class Drag : MonoBehaviour
         greenRadius = Mathf.Max(greenRadius, blueRadius);
         yellowRadius = Mathf.Max(yellowRadius, greenRadius);
         redRadius = Mathf.Max(redRadius, yellowRadius);
+        maxPlayerHealth = Mathf.Max(1, maxPlayerHealth);
+        currentPlayerHealth = Mathf.Clamp(currentPlayerHealth, 0, maxPlayerHealth);
         chargeDistanceForMax = Mathf.Max(0.01f, chargeDistanceForMax);
         minChargeMultiplier = Mathf.Max(0f, minChargeMultiplier);
         maxChargeMultiplier = Mathf.Max(maxChargeMultiplier, minChargeMultiplier);
+        chargeFillMaxAlpha = Mathf.Clamp(chargeFillMaxAlpha, 0.02f, 0.35f);
         reverseInvalidationGraceDistance = Mathf.Max(0f, reverseInvalidationGraceDistance);
         ultimateTargetRadius = Mathf.Max(0.01f, ultimateTargetRadius);
         ultimateOuterMinRadius = Mathf.Max(ultimateOuterMinRadius, redRadius + ultimateTargetRadius);
@@ -114,6 +126,12 @@ public class Drag : MonoBehaviour
         mainCamera = Camera.main;
         ResetInputState();
         ScheduleNextUltimateTarget();
+    }
+
+    public void SetPlayerHealth(int currentHealth, int maxHealth)
+    {
+        maxPlayerHealth = Mathf.Max(1, maxHealth);
+        currentPlayerHealth = Mathf.Clamp(currentHealth, 0, maxPlayerHealth);
     }
 
     private void Update()
@@ -579,6 +597,38 @@ public class Drag : MonoBehaviour
         return Mathf.Lerp(minChargeMultiplier, maxChargeMultiplier, chargeRatio);
     }
 
+    private float GetChargeRatio()
+    {
+        if (maxChargeMultiplier <= minChargeMultiplier)
+        {
+            return 0f;
+        }
+
+        return Mathf.InverseLerp(minChargeMultiplier, maxChargeMultiplier, currentChargeMultiplier);
+    }
+
+    private float GetPlayerHealthRatio()
+    {
+        if (maxPlayerHealth <= 0)
+        {
+            return 0f;
+        }
+
+        return Mathf.Clamp01(currentPlayerHealth / (float)maxPlayerHealth);
+    }
+
+    private Color GetPlayerHealthColor(float healthRatio)
+    {
+        float alpha = healthRatio <= 0.25f
+            ? Mathf.Lerp(healthBarAlpha * 0.45f, healthBarAlpha, Mathf.PingPong(Time.time * 5f, 1f))
+            : healthBarAlpha;
+
+        return Color.Lerp(
+            new Color(1f, 0.05f, 0.02f, alpha),
+            new Color(0.95f, 0.01f, 0.01f, alpha),
+            healthRatio);
+    }
+
     private Vector2 ScreenToViewport(Vector2 screenPosition)
     {
         return new Vector2(
@@ -605,6 +655,7 @@ public class Drag : MonoBehaviour
             return;
         }
 
+        DrawChargeFill();
         DrawAttackModeSplitLine();
         DrawChargeRing(redRadius, new Color(1f, 0.15f, 0.05f, 0.9f));
         DrawChargeRing(yellowRadius, new Color(1f, 0.85f, 0.1f, 0.9f));
@@ -616,10 +667,52 @@ public class Drag : MonoBehaviour
         DrawOverlayLabels();
     }
 
+    private void DrawChargeFill()
+    {
+        float chargeRatio = GetChargeRatio();
+        if (chargeRatio <= 0f)
+        {
+            return;
+        }
+
+        Vector2 center = ViewportToGuiPoint(chargeCenterViewport);
+        float radius = Mathf.Lerp(blueRadius * 0.12f, blueRadius, chargeRatio) * GetChargeRadiusScale();
+        float alpha = Mathf.Lerp(0.04f, chargeFillMaxAlpha, chargeRatio);
+        Color fillColor = chargeInvalidated
+            ? new Color(1f, 0.1f, 0.08f, Mathf.Min(alpha, 0.1f))
+            : new Color(0.1f, 0.55f, 1f, alpha);
+
+        DrawFilledEllipse(center, radius, radius, fillColor);
+    }
+
     private void DrawAttackModeSplitLine()
     {
         float y = (1f - attackModeSplitY) * Screen.height;
-        DrawLine(new Vector2(0f, y), new Vector2(Screen.width, y), new Color(0f, 0f, 0f, 0.9f), overlayLineWidth + 2f);
+        float centerX = chargeCenterViewport.x * Screen.width;
+        float sideMargin = healthBarSideMargin * Screen.width;
+        float centerGap = Mathf.Max(blueRadius * 0.55f * GetChargeRadiusScale(), healthBarCenterGap * GetChargeRadiusScale());
+        float leftEdge = Mathf.Clamp(sideMargin, 0f, centerX);
+        float rightEdge = Mathf.Clamp(Screen.width - sideMargin, centerX, Screen.width);
+        float leftInner = Mathf.Max(leftEdge, centerX - centerGap);
+        float rightInner = Mathf.Min(rightEdge, centerX + centerGap);
+        float healthRatio = GetPlayerHealthRatio();
+        float leftHealthLength = Mathf.Max(0f, leftInner - leftEdge) * healthRatio;
+        float rightHealthLength = Mathf.Max(0f, rightEdge - rightInner) * healthRatio;
+
+        DrawLine(new Vector2(0f, y), new Vector2(Screen.width, y), new Color(0f, 0f, 0f, 0.88f), overlayLineWidth + 2f);
+        DrawLine(new Vector2(leftEdge, y), new Vector2(leftInner, y), new Color(0.12f, 0f, 0f, 0.62f), healthBarWidth + 3f);
+        DrawLine(new Vector2(rightInner, y), new Vector2(rightEdge, y), new Color(0.12f, 0f, 0f, 0.62f), healthBarWidth + 3f);
+
+        if (healthRatio <= 0f)
+        {
+            return;
+        }
+
+        Color healthColor = GetPlayerHealthColor(healthRatio);
+        DrawLine(new Vector2(leftInner - leftHealthLength, y), new Vector2(leftInner, y), healthColor, healthBarWidth);
+        DrawLine(new Vector2(rightInner, y), new Vector2(rightInner + rightHealthLength, y), healthColor, healthBarWidth);
+        DrawLine(new Vector2(leftInner - leftHealthLength, y - healthBarWidth * 0.22f), new Vector2(leftInner, y - healthBarWidth * 0.22f), new Color(1f, 0.55f, 0.45f, healthBarAlpha * 0.35f), Mathf.Max(1f, healthBarWidth * 0.18f));
+        DrawLine(new Vector2(rightInner, y - healthBarWidth * 0.22f), new Vector2(rightInner + rightHealthLength, y - healthBarWidth * 0.22f), new Color(1f, 0.55f, 0.45f, healthBarAlpha * 0.35f), Mathf.Max(1f, healthBarWidth * 0.18f));
     }
 
     private void DrawChargeRing(float viewportRadius, Color color)
@@ -723,6 +816,27 @@ public class Drag : MonoBehaviour
             DrawLine(previousPoint, nextPoint, color, width);
             previousPoint = nextPoint;
         }
+    }
+
+    private void DrawFilledEllipse(Vector2 center, float radiusX, float radiusY, Color color)
+    {
+        int segments = Mathf.Max(12, overlaySegments);
+        float rowHeight = Mathf.Max(1f, (radiusY * 2f) / segments);
+
+        Color oldColor = GUI.color;
+        GUI.color = color;
+
+        for (int index = 0; index <= segments; index++)
+        {
+            float y = Mathf.Lerp(-radiusY, radiusY, index / (float)segments);
+            float normalizedY = y / radiusY;
+            float halfWidth = Mathf.Sqrt(Mathf.Max(0f, 1f - normalizedY * normalizedY)) * radiusX;
+            GUI.DrawTexture(
+                new Rect(center.x - halfWidth, center.y + y - (rowHeight * 0.5f), halfWidth * 2f, rowHeight),
+                Texture2D.whiteTexture);
+        }
+
+        GUI.color = oldColor;
     }
 
     private static void DrawLine(Vector2 start, Vector2 end, Color color, float width)

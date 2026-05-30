@@ -831,9 +831,9 @@ MonoBehaviour:
   weakDamage: 10
   mediumDamage: 20
   strongDamage: 30
-  chargeDistanceForMax: 0.32
+  chargeDistanceForMax: 6
   minChargeMultiplier: 1
-  maxChargeMultiplier: 2
+  maxChargeMultiplier: 3
   reverseDirectionDotThreshold: 0.4
   reverseInvalidationGraceDistance: 0.015
   meleeRange: 1.2
@@ -854,6 +854,7 @@ MonoBehaviour:
   showDebugOverlay: 1
   overlaySegments: 96
   overlayLineWidth: 3
+  chargeFillMaxAlpha: 0.16
 --- !u!1 &2108841558
 GameObject:
   m_ObjectHideFlags: 0
