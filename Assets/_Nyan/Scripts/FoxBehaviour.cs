@@ -6,13 +6,14 @@ public class FoxBehaviour : MonoBehaviour
     [SerializeField] private float hitDistance = 0.35f;
     [SerializeField] private float lifetime = 6f;
 
-    private PandaHealth target;
+    private IDamageable target;
+    private Transform targetTransform;
     private int damage;
     private float destroyAt;
 
-    public void Initialize(PandaHealth targetHealth, int attackDamage)
+    public void Initialize(IDamageable targetDamageable, int attackDamage)
     {
-        target = targetHealth;
+        SetTarget(targetDamageable);
         damage = attackDamage;
         destroyAt = Time.time + lifetime;
     }
@@ -24,21 +25,21 @@ public class FoxBehaviour : MonoBehaviour
             destroyAt = Time.time + lifetime;
         }
 
-        if (target == null)
+        if (targetTransform == null)
         {
-            target = FindFirstObjectByType<PandaHealth>();
+            SetTarget(DamageableFinder.FindFirst());
         }
     }
 
     private void Update()
     {
-        if (Time.time >= destroyAt || target == null)
+        if (Time.time >= destroyAt || targetTransform == null || target == null || target.IsDefeated)
         {
             Destroy(gameObject);
             return;
         }
 
-        Vector3 targetPosition = target.transform.position;
+        Vector3 targetPosition = targetTransform.position;
         Vector3 direction = targetPosition - transform.position;
 
         if (direction.magnitude <= hitDistance)
@@ -54,5 +55,11 @@ public class FoxBehaviour : MonoBehaviour
         {
             transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
         }
+    }
+
+    private void SetTarget(IDamageable targetDamageable)
+    {
+        target = targetDamageable;
+        targetTransform = targetDamageable?.DamageTransform;
     }
 }

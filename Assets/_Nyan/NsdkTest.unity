@@ -814,6 +814,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab8718e02b26653428fa831869d5cdba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  projectileAttack: {fileID: 0}
   projectilePrefab: {fileID: 7893982696271944567, guid: 891d34131d129c842afe7611b9f92ae3, type: 3}
   launchPoint: {fileID: 1533365157}
   useLaunchPointOverride: 0
@@ -841,7 +842,7 @@ MonoBehaviour:
   meleeHitMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  foxPrefab: {fileID: 0}
+  foxPrefab: {fileID: 6356111818581873192, guid: 6d3b82c7cbdf4b9097c724d3943c4f17, type: 3}
   ultimateSpawnMinDelay: 2.5
   ultimateSpawnMaxDelay: 5.5
   ultimateVisibleDuration: 1.1

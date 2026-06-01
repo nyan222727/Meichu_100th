@@ -1,10 +1,11 @@
 using UnityEngine;
 
-public class PandaHealth : MonoBehaviour
+public class PandaHealth : MonoBehaviour, IDamageable
 {
     [SerializeField] private int maxHealth = 100;
     [SerializeField] private int currentHealth;
 
+    public Transform DamageTransform => transform;
     public int MaxHealth => maxHealth;
     public int CurrentHealth => currentHealth;
     public bool IsDefeated => currentHealth <= 0;

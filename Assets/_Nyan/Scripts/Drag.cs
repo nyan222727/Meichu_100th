@@ -20,6 +20,7 @@ public class Drag : MonoBehaviour
     }
 
     [Header("Projectile")]
+    [SerializeField] private PlayerProjectileAttack projectileAttack;
     [SerializeField] private Rigidbody projectilePrefab;
     [SerializeField] private Transform launchPoint;
     [SerializeField] private bool useLaunchPointOverride;
@@ -89,12 +90,7 @@ public class Drag : MonoBehaviour
     private float nextUltimateTargetTime;
     private float ultimateTargetExpiresAt;
     private Vector2 ultimateTargetViewportPosition;
-    private bool hasExitedBlueZone;
-    private bool chargeInvalidated;
-    private float accumulatedChargeDistance;
-    private float currentChargeMultiplier = 1f;
-    private Vector2 previousDragViewportPosition;
-    private Vector2 blueExitDirection;
+    private readonly PlayerCharge charge = new PlayerCharge();
 
     private void OnValidate()
     {
@@ -124,6 +120,7 @@ public class Drag : MonoBehaviour
     private void OnEnable()
     {
         mainCamera = Camera.main;
+        EnsureProjectileAttack();
         ResetInputState();
         ScheduleNextUltimateTarget();
     }
@@ -239,12 +236,7 @@ public class Drag : MonoBehaviour
     {
         currentAttackMode = AttackMode.None;
         isDragging = GetChargeZone(viewportPosition) == ChargeZone.Blue;
-        accumulatedChargeDistance = 0f;
-        currentChargeMultiplier = minChargeMultiplier;
-        chargeInvalidated = false;
-        hasExitedBlueZone = false;
-        blueExitDirection = Vector2.zero;
-        previousDragViewportPosition = viewportPosition;
+        charge.Begin(viewportPosition, minChargeMultiplier);
 
         if (logAttacks && !isDragging)
         {
@@ -254,40 +246,16 @@ public class Drag : MonoBehaviour
 
     private void UpdateCharge(Vector2 viewportPosition)
     {
-        float distanceFromCenter = GetChargeDistance(viewportPosition);
-
-        if (!hasExitedBlueZone)
-        {
-            if (distanceFromCenter <= blueRadius)
-            {
-                accumulatedChargeDistance += GetNormalizedScreenDistance(previousDragViewportPosition, viewportPosition);
-                currentChargeMultiplier = GetCurrentChargeMultiplier();
-            }
-            else
-            {
-                hasExitedBlueZone = true;
-                blueExitDirection = GetDirectionFromCenter(viewportPosition);
-            }
-        }
-        else if (!chargeInvalidated)
-        {
-            if (distanceFromCenter < blueRadius - reverseInvalidationGraceDistance)
-            {
-                chargeInvalidated = true;
-            }
-            else
-            {
-                Vector2 currentDirection = GetDirectionFromCenter(viewportPosition);
-                if (blueExitDirection != Vector2.zero && Vector2.Dot(currentDirection, blueExitDirection) <= reverseDirectionDotThreshold)
-                {
-                    chargeInvalidated = true;
-                }
-            }
-
-            currentChargeMultiplier = GetCurrentChargeMultiplier();
-        }
-
-        previousDragViewportPosition = viewportPosition;
+        charge.Update(
+            viewportPosition,
+            chargeCenterViewport,
+            GetChargeRadiusScale(),
+            blueRadius,
+            chargeDistanceForMax,
+            minChargeMultiplier,
+            maxChargeMultiplier,
+            reverseDirectionDotThreshold,
+            reverseInvalidationGraceDistance);
     }
 
     private void ReleaseDrag(Vector2 viewportPosition)
@@ -319,7 +287,7 @@ public class Drag : MonoBehaviour
             return false;
         }
 
-        if (chargeInvalidated)
+        if (charge.IsInvalidated)
         {
             return false;
         }
@@ -342,13 +310,13 @@ public class Drag : MonoBehaviour
         switch (zone)
         {
             case ChargeZone.Green:
-                FireProjectile(weakImpulse * currentChargeMultiplier, Mathf.RoundToInt(weakDamage * currentChargeMultiplier));
+                FireProjectile(weakImpulse * charge.Multiplier, Mathf.RoundToInt(weakDamage * charge.Multiplier));
                 break;
             case ChargeZone.Yellow:
-                FireProjectile(mediumImpulse * currentChargeMultiplier, Mathf.RoundToInt(mediumDamage * currentChargeMultiplier));
+                FireProjectile(mediumImpulse * charge.Multiplier, Mathf.RoundToInt(mediumDamage * charge.Multiplier));
                 break;
             case ChargeZone.Red:
-                FireProjectile(strongImpulse * currentChargeMultiplier, Mathf.RoundToInt(strongDamage * currentChargeMultiplier));
+                FireProjectile(strongImpulse * charge.Multiplier, Mathf.RoundToInt(strongDamage * charge.Multiplier));
                 break;
             default:
                 if (logAttacks)
@@ -380,73 +348,56 @@ public class Drag : MonoBehaviour
             return;
         }
 
-        PandaHealth pandaHealth = hit.collider.GetComponentInParent<PandaHealth>();
-        if (pandaHealth == null)
+        IDamageable damageable = DamageableFinder.GetInParent(hit.collider);
+        if (damageable == null)
         {
             if (logAttacks)
             {
-                Debug.Log($"[PlayerAttack] Melee hit {hit.collider.name}, but it has no PandaHealth.");
+                Debug.Log($"[PlayerAttack] Melee hit {hit.collider.name}, but it has no IDamageable.");
             }
 
             return;
         }
 
-        pandaHealth.TakeDamage(meleeDamage);
+        damageable.TakeDamage(meleeDamage);
 
         if (logAttacks)
         {
-            Debug.Log($"[PlayerAttack] Melee hit {pandaHealth.name}. Damage={meleeDamage}");
+            string targetName = damageable.DamageTransform != null
+                ? damageable.DamageTransform.name
+                : hit.collider.name;
+            Debug.Log($"[PlayerAttack] Melee hit {targetName}. Damage={meleeDamage}");
         }
     }
 
     private void FireProjectile(float impulse, int damage)
     {
-        if (projectilePrefab == null)
-        {
-            Debug.LogWarning("[PlayerAttack] Missing projectile prefab.");
-            return;
-        }
-
-        Vector3 spawnPosition = GetLaunchPosition();
-        Quaternion spawnRotation = Quaternion.LookRotation(mainCamera.transform.forward, Vector3.up);
-        Rigidbody projectile = Instantiate(projectilePrefab, spawnPosition, spawnRotation);
-
-        projectile.isKinematic = false;
-        projectile.useGravity = true;
-        projectile.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-        projectile.linearVelocity = Vector3.zero;
-        projectile.angularVelocity = Vector3.zero;
-
-        ProjectileDamage projectileDamage = projectile.GetComponent<ProjectileDamage>();
-        if (projectileDamage == null)
-        {
-            projectileDamage = projectile.gameObject.AddComponent<ProjectileDamage>();
-        }
-
-        projectileDamage.SetDamage(damage);
-        projectile.AddForce(mainCamera.transform.forward * impulse, ForceMode.Impulse);
-
-        if (logAttacks)
-        {
-            Debug.Log($"[PlayerAttack] Fired ranged projectile. Impulse={impulse}, Damage={damage}");
-        }
+        EnsureProjectileAttack();
+        projectileAttack.Fire(mainCamera, chargeCenterViewport, impulse, damage);
     }
 
-    private Vector3 GetLaunchPosition()
+    private void EnsureProjectileAttack()
     {
-        if (useLaunchPointOverride && launchPoint != null)
+        if (projectileAttack == null)
         {
-            return launchPoint.position;
+            projectileAttack = GetComponent<PlayerProjectileAttack>();
         }
 
-        Transform cameraTransform = mainCamera.transform;
-        Vector3 viewportPosition = new Vector3(
-            chargeCenterViewport.x,
-            chargeCenterViewport.y,
-            launchDistanceFromCamera);
+        if (projectileAttack == null)
+        {
+            projectileAttack = gameObject.AddComponent<PlayerProjectileAttack>();
+        }
 
-        return mainCamera.ViewportToWorldPoint(viewportPosition)
-            + (cameraTransform.up * launchVerticalOffset);
+        if (!projectileAttack.HasProjectilePrefab && projectilePrefab != null)
+        {
+            projectileAttack.Configure(
+                projectilePrefab,
+                launchPoint,
+                useLaunchPointOverride,
+                launchDistanceFromCamera,
+                launchVerticalOffset,
+                logAttacks);
+        }
     }
 
     private void ScheduleNextUltimateTarget()
@@ -490,9 +441,13 @@ public class Drag : MonoBehaviour
 
     private void SummonFox()
     {
-        GameObject fox = foxPrefab != null
-            ? Instantiate(foxPrefab, GetUltimateWorldPosition(), Quaternion.identity)
-            : CreatePlaceholderFox(GetUltimateWorldPosition());
+        if (foxPrefab == null)
+        {
+            Debug.LogWarning("[PlayerAttack] Missing fox prefab.");
+            return;
+        }
+
+        GameObject fox = Instantiate(foxPrefab, GetUltimateWorldPosition(), Quaternion.identity);
 
         FoxBehaviour foxBehaviour = fox.GetComponent<FoxBehaviour>();
         if (foxBehaviour == null)
@@ -500,7 +455,7 @@ public class Drag : MonoBehaviour
             foxBehaviour = fox.AddComponent<FoxBehaviour>();
         }
 
-        foxBehaviour.Initialize(FindFirstObjectByType<PandaHealth>(), ultimateFoxDamage);
+        foxBehaviour.Initialize(DamageableFinder.FindFirst(), ultimateFoxDamage);
 
         if (logAttacks)
         {
@@ -516,22 +471,6 @@ public class Drag : MonoBehaviour
             ultimateSpawnDistanceFromCamera);
 
         return mainCamera.ViewportToWorldPoint(viewportPosition);
-    }
-
-    private static GameObject CreatePlaceholderFox(Vector3 spawnPosition)
-    {
-        GameObject fox = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-        fox.name = "Fox Ultimate";
-        fox.transform.position = spawnPosition;
-        fox.transform.localScale = new Vector3(0.25f, 0.25f, 0.45f);
-
-        Renderer renderer = fox.GetComponent<Renderer>();
-        if (renderer != null)
-        {
-            renderer.material.color = new Color(1f, 0.35f, 0.05f, 1f);
-        }
-
-        return fox;
     }
 
     private AttackMode GetAttackMode(Vector2 viewportPosition)
@@ -573,38 +512,9 @@ public class Drag : MonoBehaviour
         return Vector2.Distance(screenPosition, centerPosition) / GetChargeRadiusScale();
     }
 
-    private float GetNormalizedScreenDistance(Vector2 fromViewportPosition, Vector2 toViewportPosition)
-    {
-        Vector2 fromScreenPosition = ViewportToScreenPoint(fromViewportPosition);
-        Vector2 toScreenPosition = ViewportToScreenPoint(toViewportPosition);
-        return Vector2.Distance(fromScreenPosition, toScreenPosition) / GetChargeRadiusScale();
-    }
-
-    private Vector2 GetDirectionFromCenter(Vector2 viewportPosition)
-    {
-        Vector2 direction = ViewportToScreenPoint(viewportPosition) - ViewportToScreenPoint(chargeCenterViewport);
-        return direction.sqrMagnitude <= 0.0001f ? Vector2.zero : direction.normalized;
-    }
-
-    private float GetCurrentChargeMultiplier()
-    {
-        if (chargeInvalidated)
-        {
-            return minChargeMultiplier;
-        }
-
-        float chargeRatio = Mathf.Clamp01(accumulatedChargeDistance / chargeDistanceForMax);
-        return Mathf.Lerp(minChargeMultiplier, maxChargeMultiplier, chargeRatio);
-    }
-
     private float GetChargeRatio()
     {
-        if (maxChargeMultiplier <= minChargeMultiplier)
-        {
-            return 0f;
-        }
-
-        return Mathf.InverseLerp(minChargeMultiplier, maxChargeMultiplier, currentChargeMultiplier);
+        return charge.GetRatio(minChargeMultiplier, maxChargeMultiplier);
     }
 
     private float GetPlayerHealthRatio()
@@ -640,12 +550,7 @@ public class Drag : MonoBehaviour
     {
         isDragging = false;
         currentAttackMode = AttackMode.None;
-        hasExitedBlueZone = false;
-        chargeInvalidated = false;
-        accumulatedChargeDistance = 0f;
-        currentChargeMultiplier = minChargeMultiplier;
-        previousDragViewportPosition = default;
-        blueExitDirection = Vector2.zero;
+        charge.Reset(minChargeMultiplier);
     }
 
     private void OnGUI()
@@ -678,7 +583,7 @@ public class Drag : MonoBehaviour
         Vector2 center = ViewportToGuiPoint(chargeCenterViewport);
         float radius = Mathf.Lerp(blueRadius * 0.12f, blueRadius, chargeRatio) * GetChargeRadiusScale();
         float alpha = Mathf.Lerp(0.04f, chargeFillMaxAlpha, chargeRatio);
-        Color fillColor = chargeInvalidated
+        Color fillColor = charge.IsInvalidated
             ? new Color(1f, 0.1f, 0.08f, Mathf.Min(alpha, 0.1f))
             : new Color(0.1f, 0.55f, 1f, alpha);
 
@@ -778,7 +683,7 @@ public class Drag : MonoBehaviour
 
         AttackMode mode = GetAttackMode(lastPointerViewportPosition);
         ChargeZone zone = GetChargeZone(lastPointerViewportPosition);
-        string chargeText = chargeInvalidated ? "Invalid" : $"{currentChargeMultiplier:0.00}x";
+        string chargeText = charge.IsInvalidated ? "Invalid" : $"{charge.Multiplier:0.00}x";
         GUI.Label(
             new Rect(16f, 46f, Screen.width - 32f, 34f),
             $"Pointer: {mode}, Zone: {zone}, Charge: {chargeText}",

@@ -14,13 +14,13 @@ public class ProjectileDamage : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        PandaHealth pandaHealth = collision.collider.GetComponentInParent<PandaHealth>();
-        if (pandaHealth == null)
+        IDamageable damageable = DamageableFinder.GetInParent(collision.collider);
+        if (damageable == null)
         {
             return;
         }
 
-        pandaHealth.TakeDamage(damage);
+        damageable.TakeDamage(damage);
 
         if (destroyOnHit)
         {
