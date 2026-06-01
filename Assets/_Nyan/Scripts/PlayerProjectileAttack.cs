@@ -2,30 +2,12 @@ using UnityEngine;
 
 public class PlayerProjectileAttack : MonoBehaviour
 {
-    [SerializeField] private Rigidbody projectilePrefab;
+    [SerializeField] private GameObject projectilePrefab;
     [SerializeField] private Transform launchPoint;
     [SerializeField] private bool useLaunchPointOverride;
     [SerializeField] private float launchDistanceFromCamera = 0.65f;
     [SerializeField] private float launchVerticalOffset;
     [SerializeField] private bool logAttacks = true;
-
-    public bool HasProjectilePrefab => projectilePrefab != null;
-
-    public void Configure(
-        Rigidbody prefab,
-        Transform point,
-        bool usePointOverride,
-        float distanceFromCamera,
-        float verticalOffset,
-        bool shouldLogAttacks)
-    {
-        projectilePrefab = prefab;
-        launchPoint = point;
-        useLaunchPointOverride = usePointOverride;
-        launchDistanceFromCamera = distanceFromCamera;
-        launchVerticalOffset = verticalOffset;
-        logAttacks = shouldLogAttacks;
-    }
 
     public bool Fire(Camera sourceCamera, Vector2 launchViewportPosition, float impulse, int damage)
     {
@@ -43,7 +25,14 @@ public class PlayerProjectileAttack : MonoBehaviour
 
         Vector3 spawnPosition = GetLaunchPosition(sourceCamera, launchViewportPosition);
         Quaternion spawnRotation = Quaternion.LookRotation(sourceCamera.transform.forward, Vector3.up);
-        Rigidbody projectile = Instantiate(projectilePrefab, spawnPosition, spawnRotation);
+        GameObject projectileObject = Instantiate(projectilePrefab, spawnPosition, spawnRotation);
+        Rigidbody projectile = projectileObject.GetComponent<Rigidbody>();
+        if (projectile == null)
+        {
+            Debug.LogWarning($"[PlayerProjectileAttack] Projectile prefab {projectilePrefab.name} has no Rigidbody.");
+            Destroy(projectileObject);
+            return false;
+        }
 
         projectile.isKinematic = false;
         projectile.useGravity = true;
@@ -51,10 +40,10 @@ public class PlayerProjectileAttack : MonoBehaviour
         projectile.linearVelocity = Vector3.zero;
         projectile.angularVelocity = Vector3.zero;
 
-        ProjectileDamage projectileDamage = projectile.GetComponent<ProjectileDamage>();
+        ProjectileDamage projectileDamage = projectileObject.GetComponent<ProjectileDamage>();
         if (projectileDamage == null)
         {
-            projectileDamage = projectile.gameObject.AddComponent<ProjectileDamage>();
+            projectileDamage = projectileObject.AddComponent<ProjectileDamage>();
         }
 
         projectileDamage.SetDamage(damage);

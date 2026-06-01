@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class PlayerCombatController : MonoBehaviour
 {
@@ -21,9 +22,8 @@ public class PlayerCombatController : MonoBehaviour
 
     [Header("Projectile")]
     [SerializeField] private PlayerProjectileAttack projectileAttack;
-    [SerializeField] private Rigidbody projectilePrefab;
-    [SerializeField] private Transform launchPoint;
-    [SerializeField] private bool useLaunchPointOverride;
+    [FormerlySerializedAs("rangedAttackDefinition")]
+    [SerializeField] private ProjectileAttackSettings rangedAttackSettings;
 
     [Header("Screen Controls")]
     [SerializeField, Range(0.05f, 0.95f)] private float attackModeSplitY = 0.5f;
@@ -33,16 +33,6 @@ public class PlayerCombatController : MonoBehaviour
     [SerializeField, Range(0.01f, 0.5f)] private float yellowRadius = 0.235f;
     [SerializeField, Range(0.01f, 0.5f)] private float redRadius = 0.29f;
 
-    [Header("Ranged Launch")]
-    [SerializeField] private float launchDistanceFromCamera = 0.65f;
-    [SerializeField] private float launchVerticalOffset;
-    [SerializeField] private float weakImpulse = 3.5f;
-    [SerializeField] private float mediumImpulse = 6f;
-    [SerializeField] private float strongImpulse = 9f;
-    [SerializeField] private int weakDamage = 10;
-    [SerializeField] private int mediumDamage = 20;
-    [SerializeField] private int strongDamage = 30;
-
     [Header("Blue Charge")]
     [SerializeField] private float chargeDistanceForMax = 6f;
     [SerializeField] private float minChargeMultiplier = 1f;
@@ -51,11 +41,11 @@ public class PlayerCombatController : MonoBehaviour
     [SerializeField] private float reverseInvalidationGraceDistance = 0.015f;
 
     [Header("Melee")]
-    [SerializeField] private float meleeRange = 1.2f;
-    [SerializeField] private int meleeDamage = 15;
-    [SerializeField] private LayerMask meleeHitMask = ~0;
+    [SerializeField] private PlayerMeleeAttack meleeAttack;
 
     [Header("Fox Ultimate")]
+    [FormerlySerializedAs("ultimateDefinition")]
+    [SerializeField] private FoxUltimateSettings ultimateSettings;
     [SerializeField] private GameObject foxPrefab;
     [SerializeField] private float ultimateSpawnMinDelay = 2.5f;
     [SerializeField] private float ultimateSpawnMaxDelay = 5.5f;
@@ -118,6 +108,7 @@ public class PlayerCombatController : MonoBehaviour
         mainCamera = Camera.main;
         EnsurePlayerHealth();
         EnsureProjectileAttack();
+        EnsureMeleeAttack();
         ResetInputState();
         ultimate.ScheduleNextTarget(GetUltimateConfig());
     }
@@ -252,7 +243,7 @@ public class PlayerCombatController : MonoBehaviour
         }
         else if (currentAttackMode == AttackMode.Melee)
         {
-            ReleaseMeleeAttack();
+            ReleaseMeleeAttack(viewportPosition);
         }
 
         ResetInputState();
@@ -261,68 +252,44 @@ public class PlayerCombatController : MonoBehaviour
     private void ReleaseRangedAttack(Vector2 viewportPosition)
     {
         ChargeZone zone = GetChargeZone(viewportPosition);
-
-        switch (zone)
+        if (!TryGetAttackStrength(zone, out AttackStrength strength))
         {
-            case ChargeZone.Green:
-                FireProjectile(weakImpulse * charge.Multiplier, Mathf.RoundToInt(weakDamage * charge.Multiplier));
-                break;
-            case ChargeZone.Yellow:
-                FireProjectile(mediumImpulse * charge.Multiplier, Mathf.RoundToInt(mediumDamage * charge.Multiplier));
-                break;
-            case ChargeZone.Red:
-                FireProjectile(strongImpulse * charge.Multiplier, Mathf.RoundToInt(strongDamage * charge.Multiplier));
-                break;
-            default:
-                if (logAttacks)
-                {
-                    Debug.Log($"[PlayerAttack] Ranged attack cancelled in {zone} zone.");
-                }
-                break;
+            if (logAttacks)
+            {
+                Debug.Log($"[PlayerAttack] Ranged attack cancelled in {zone} zone.");
+            }
+
+            return;
         }
+
+        if (!TryGetRangedAttackStats(strength, out ProjectileAttackStats stats))
+        {
+            if (logAttacks)
+            {
+                Debug.LogWarning("[PlayerAttack] Missing ranged attack settings.");
+            }
+
+            return;
+        }
+
+        FireProjectile(stats.Impulse * charge.Multiplier, Mathf.RoundToInt(stats.Damage * charge.Multiplier));
     }
 
-    private void ReleaseMeleeAttack()
+    private void ReleaseMeleeAttack(Vector2 viewportPosition)
     {
-        Transform cameraTransform = mainCamera.transform;
-        bool hitSomething = Physics.Raycast(
-            cameraTransform.position,
-            cameraTransform.forward,
-            out RaycastHit hit,
-            meleeRange,
-            meleeHitMask,
-            QueryTriggerInteraction.Ignore);
-
-        if (!hitSomething)
+        ChargeZone zone = GetChargeZone(viewportPosition);
+        if (!TryGetAttackStrength(zone, out AttackStrength strength))
         {
             if (logAttacks)
             {
-                Debug.Log("[PlayerAttack] Melee attack missed.");
+                Debug.Log($"[PlayerAttack] Melee attack cancelled in {zone} zone.");
             }
 
             return;
         }
 
-        IDamageable damageable = DamageableFinder.GetInParent(hit.collider);
-        if (damageable == null)
-        {
-            if (logAttacks)
-            {
-                Debug.Log($"[PlayerAttack] Melee hit {hit.collider.name}, but it has no IDamageable.");
-            }
-
-            return;
-        }
-
-        damageable.TakeDamage(meleeDamage);
-
-        if (logAttacks)
-        {
-            string targetName = damageable.DamageTransform != null
-                ? damageable.DamageTransform.name
-                : hit.collider.name;
-            Debug.Log($"[PlayerAttack] Melee hit {targetName}. Damage={meleeDamage}");
-        }
+        EnsureMeleeAttack();
+        meleeAttack.Attack(mainCamera, chargeCenterViewport, strength, charge.Multiplier);
     }
 
     private void FireProjectile(float impulse, int damage)
@@ -343,15 +310,18 @@ public class PlayerCombatController : MonoBehaviour
             projectileAttack = gameObject.AddComponent<PlayerProjectileAttack>();
         }
 
-        if (!projectileAttack.HasProjectilePrefab && projectilePrefab != null)
+    }
+
+    private void EnsureMeleeAttack()
+    {
+        if (meleeAttack == null)
         {
-            projectileAttack.Configure(
-                projectilePrefab,
-                launchPoint,
-                useLaunchPointOverride,
-                launchDistanceFromCamera,
-                launchVerticalOffset,
-                logAttacks);
+            meleeAttack = GetComponent<PlayerMeleeAttack>();
+        }
+
+        if (meleeAttack == null)
+        {
+            meleeAttack = gameObject.AddComponent<PlayerMeleeAttack>();
         }
     }
 
@@ -412,20 +382,62 @@ public class PlayerCombatController : MonoBehaviour
         return playerHealth != null ? playerHealth.HealthRatio : 1f;
     }
 
+    private bool TryGetAttackStrength(ChargeZone zone, out AttackStrength strength)
+    {
+        switch (zone)
+        {
+            case ChargeZone.Green:
+                strength = AttackStrength.Weak;
+                return true;
+            case ChargeZone.Yellow:
+                strength = AttackStrength.Medium;
+                return true;
+            case ChargeZone.Red:
+                strength = AttackStrength.Strong;
+                return true;
+            default:
+                strength = default;
+                return false;
+        }
+    }
+
+    private bool TryGetRangedAttackStats(AttackStrength strength, out ProjectileAttackStats stats)
+    {
+        if (rangedAttackSettings != null && rangedAttackSettings.TryGetStats(strength, out stats))
+        {
+            return true;
+        }
+
+        stats = default;
+        return false;
+    }
+
     private PlayerUltimateConfig GetUltimateConfig()
     {
-        return new PlayerUltimateConfig
-        {
-            FoxPrefab = foxPrefab,
-            SpawnMinDelay = ultimateSpawnMinDelay,
-            SpawnMaxDelay = ultimateSpawnMaxDelay,
-            VisibleDuration = ultimateVisibleDuration,
-            TargetRadius = ultimateTargetRadius,
-            OuterMinRadius = ultimateOuterMinRadius,
-            OuterMaxRadius = ultimateOuterMaxRadius,
-            SpawnDistanceFromCamera = ultimateSpawnDistanceFromCamera,
-            FoxDamage = ultimateFoxDamage
-        };
+        PlayerUltimateConfig config = ultimateSettings != null
+            ? ultimateSettings.ToConfig()
+            : new PlayerUltimateConfig
+            {
+                FoxPrefab = foxPrefab,
+                SpawnMinDelay = ultimateSpawnMinDelay,
+                SpawnMaxDelay = ultimateSpawnMaxDelay,
+                VisibleDuration = ultimateVisibleDuration,
+                TargetRadius = ultimateTargetRadius,
+                OuterMinRadius = ultimateOuterMinRadius,
+                OuterMaxRadius = ultimateOuterMaxRadius,
+                SpawnDistanceFromCamera = ultimateSpawnDistanceFromCamera,
+                FoxDamage = ultimateFoxDamage
+            };
+
+        config.SpawnMinDelay = Mathf.Max(0.1f, config.SpawnMinDelay);
+        config.SpawnMaxDelay = Mathf.Max(config.SpawnMinDelay, config.SpawnMaxDelay);
+        config.VisibleDuration = Mathf.Max(0.1f, config.VisibleDuration);
+        config.TargetRadius = Mathf.Max(0.01f, config.TargetRadius);
+        config.OuterMinRadius = Mathf.Max(config.OuterMinRadius, redRadius + config.TargetRadius);
+        config.OuterMaxRadius = Mathf.Max(config.OuterMaxRadius, config.OuterMinRadius);
+        config.SpawnDistanceFromCamera = Mathf.Max(0.01f, config.SpawnDistanceFromCamera);
+        config.FoxDamage = Mathf.Max(0, config.FoxDamage);
+        return config;
     }
 
     private PlayerCombatHudSettings GetHudSettings()
@@ -453,6 +465,7 @@ public class PlayerCombatController : MonoBehaviour
     {
         ChargeZone pointerZone = hasPointerPosition ? GetChargeZone(lastPointerViewportPosition) : ChargeZone.None;
         AttackMode pointerAttackMode = hasPointerPosition ? GetAttackMode(lastPointerViewportPosition) : AttackMode.None;
+        PlayerUltimateConfig ultimateConfig = GetUltimateConfig();
 
         return new PlayerCombatHudState
         {
@@ -466,7 +479,7 @@ public class PlayerCombatController : MonoBehaviour
             PlayerHealthRatio = GetPlayerHealthRatio(),
             HasUltimateTarget = ultimate.HasTarget,
             UltimateTargetViewportPosition = ultimate.TargetViewportPosition,
-            UltimateTargetRadius = ultimateTargetRadius
+            UltimateTargetRadius = ultimateConfig.TargetRadius
         };
     }
 

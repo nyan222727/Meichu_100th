@@ -766,6 +766,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1923108514}
   - component: {fileID: 1923108513}
+  - component: {fileID: 1923108516}
+  - component: {fileID: 1923108517}
   - component: {fileID: 1923108515}
   m_Layer: 0
   m_Name: LauncherScript
@@ -787,6 +789,49 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _prefabWithRigidbody: {fileID: 7893982696271944567, guid: 891d34131d129c842afe7611b9f92ae3, type: 3}
+--- !u!114 &1923108516
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1923108512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e81f79f5469345b18c7d0a17af3e2c9d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  projectilePrefab: {fileID: 5840772337227632140, guid: 891d34131d129c842afe7611b9f92ae3, type: 3}
+  launchPoint: {fileID: 1533365157}
+  useLaunchPointOverride: 0
+  launchDistanceFromCamera: 0.65
+  launchVerticalOffset: 0
+  logAttacks: 1
+--- !u!114 &1923108517
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1923108512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d445d710c5e4b96ba64e79388e39918, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  meleeRange: 1.2
+  weakDamage: 15
+  mediumDamage: 25
+  strongDamage: 40
+  meleeHitMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  slashPrefab: {fileID: 5449880012781053551, guid: 930552d1104242ee974dd853eeef8295, type: 3}
+  slashDistanceFromCamera: 0.55
+  slashLifetime: 0.22
+  slashScale: {x: 1, y: 1, z: 1}
+  slashAngle: -25
+  logAttacks: 1
 --- !u!4 &1923108514
 Transform:
   m_ObjectHideFlags: 0
@@ -814,34 +859,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab8718e02b26653428fa831869d5cdba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  projectileAttack: {fileID: 0}
-  projectilePrefab: {fileID: 7893982696271944567, guid: 891d34131d129c842afe7611b9f92ae3, type: 3}
-  launchPoint: {fileID: 1533365157}
-  useLaunchPointOverride: 0
+  projectileAttack: {fileID: 1923108516}
+  rangedAttackSettings: {fileID: 11400000, guid: 2502ac8a2ecf4187adc06114736a2db8, type: 2}
+  meleeAttack: {fileID: 1923108517}
   attackModeSplitY: 0.5
   chargeCenterViewport: {x: 0.5, y: 0.5}
   blueRadius: 0.15
   greenRadius: 0.18
   yellowRadius: 0.235
   redRadius: 0.29
-  launchDistanceFromCamera: 0.65
-  launchVerticalOffset: 0
-  weakImpulse: 3.5
-  mediumImpulse: 6
-  strongImpulse: 9
-  weakDamage: 10
-  mediumDamage: 20
-  strongDamage: 30
   chargeDistanceForMax: 6
   minChargeMultiplier: 1
   maxChargeMultiplier: 3
   reverseDirectionDotThreshold: 0.4
   reverseInvalidationGraceDistance: 0.015
-  meleeRange: 1.2
-  meleeDamage: 15
-  meleeHitMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
+  ultimateSettings: {fileID: 11400000, guid: 1183f265508e46b092c581677bdb52c4, type: 2}
   foxPrefab: {fileID: 6356111818581873192, guid: 6d3b82c7cbdf4b9097c724d3943c4f17, type: 3}
   ultimateSpawnMinDelay: 2.5
   ultimateSpawnMaxDelay: 5.5
