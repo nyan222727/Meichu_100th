@@ -826,15 +826,14 @@ MonoBehaviour:
   faceOffsetY: 0
   maxHealth: 100
   currentHealth: 0
-  animator: {fileID: 0}
+  animator: {fileID: 1383383260}
   throwTriggerName: Throw
-  hit1TriggerName: Hit1
-  hit2TriggerName: Hit2
-  castTriggerNames:
-  - Cast1
-  - Cast2
-  - Cast3
-  - Cast4
+  hitTriggerName: Hit
+  hitIndexName: HitIndex
+  castTriggerName: Cast
+  castIndexName: CastIndex
+  hitAnimationCount: 2
+  castAnimationCount: 4
   deadBoolName: Dead
   clawRange: 3
   plumRange: 8
@@ -850,7 +849,6 @@ MonoBehaviour:
   plumProjectileSpeed: 6
   plumWindupTime: 0.7
   meatballMeteorPrefab: {fileID: 2407628490172359163, guid: 25b0440db03957d40a45ea0f86850141, type: 3}
-  meteorInterval: 6
   meteorCount: 10
   meteorSpawnDelay: 0.15
   meteorSpawnHeight: 10
@@ -862,7 +860,15 @@ MonoBehaviour:
     m_Bits: 64
   clawCooldown: 2
   plumCooldown: 3
-  showClawRange: 1
+  meteorCooldown: 10
+  globalCooldownAfterClaw: 0.5
+  globalCooldownAfterPlum: 0.5
+  globalCooldownAfterMeteor: 1
+  deadSinkTarget: {fileID: 1383383259}
+  deadSinkDistance: 0.4
+  deadSinkDuration: 1
+  sinkWhenAnimatorDeadBoolIsTrue: 1
+  showClawRange: 0
 --- !u!4 &1204876051
 Transform:
   m_ObjectHideFlags: 0
@@ -984,6 +990,11 @@ MeshFilter:
 --- !u!4 &1383383259 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 031f19fe650cb22499c90b021421d11c, type: 3}
+  m_PrefabInstance: {fileID: 892599778}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &1383383260 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 031f19fe650cb22499c90b021421d11c, type: 3}
   m_PrefabInstance: {fileID: 892599778}
   m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807

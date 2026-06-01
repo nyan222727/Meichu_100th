@@ -22,17 +22,29 @@ public class PandaBossAI : MonoBehaviour
     [Header("Animation")]
     public Animator animator;
 
-    [Tooltip("你的 Animator 裡 Throw state 對應的 Trigger 名稱")]
+    [Tooltip("丟梅花動畫 Trigger 名稱")]
     public string throwTriggerName = "Throw";
 
-    [Tooltip("受傷動畫 1 的 Trigger 名稱")]
-    public string hit1TriggerName = "Hit1";
+    [Tooltip("爪擊動畫 Trigger 名稱")]
+    public string clawTriggerName = "Claw";
 
-    [Tooltip("受傷動畫 2 的 Trigger 名稱")]
-    public string hit2TriggerName = "Hit2";
+    [Tooltip("受傷動畫共用 Trigger 名稱")]
+    public string hitTriggerName = "Hit";
 
-    [Tooltip("召喚/施法動畫 Trigger，可以放 Cast1, Cast2, Cast3, Cast4")]
-    public string[] castTriggerNames = { "Cast1", "Cast2", "Cast3", "Cast4" };
+    [Tooltip("受傷動畫 Index 參數名稱")]
+    public string hitIndexName = "HitIndex";
+
+    [Tooltip("召喚/施法動畫共用 Trigger 名稱")]
+    public string castTriggerName = "Cast";
+
+    [Tooltip("召喚/施法動畫 Index 參數名稱")]
+    public string castIndexName = "CastIndex";
+
+    [Tooltip("受傷動畫數量，例如 Hit1 / Hit2 就填 2")]
+    public int hitAnimationCount = 2;
+
+    [Tooltip("召喚動畫數量，例如 Cast1 ~ Cast4 就填 4")]
+    public int castAnimationCount = 4;
 
     [Tooltip("死亡 Bool 名稱")]
     public string deadBoolName = "Dead";
@@ -62,7 +74,6 @@ public class PandaBossAI : MonoBehaviour
 
     [Header("Meatball Meteor Attack")]
     public GameObject meatballMeteorPrefab;
-    public float meteorInterval = 6.0f;
     public int meteorCount = 3;
     public float meteorSpawnDelay = 0.25f;
     public float meteorSpawnHeight = 10f;
@@ -71,9 +82,38 @@ public class PandaBossAI : MonoBehaviour
     public int meteorTargetSearchAttempts = 30;
     public LayerMask groundLayer;
 
-    [Header("Attack Cooldown")]
+    [Header("Individual Attack Cooldown")]
+    [Tooltip("Claw 自己的冷卻時間。Claw 冷卻中時，只有 Claw 不能放。")]
     public float clawCooldown = 2.0f;
+
+    [Tooltip("Plum 自己的冷卻時間。Plum 冷卻中時，只有 Plum 不能放。")]
     public float plumCooldown = 3.0f;
+
+    [Tooltip("Meteor 自己的冷卻時間。Meteor 冷卻中時，只有 Meteor 不能放。")]
+    public float meteorCooldown = 6.0f;
+
+    [Header("Global Attack Cooldown")]
+    [Tooltip("Claw 攻擊結束後，幾秒內不能進行任何攻擊。")]
+    public float globalCooldownAfterClaw = 0.5f;
+
+    [Tooltip("Plum 攻擊結束後，幾秒內不能進行任何攻擊。")]
+    public float globalCooldownAfterPlum = 0.8f;
+
+    [Tooltip("Meteor 攻擊結束後，幾秒內不能進行任何攻擊。")]
+    public float globalCooldownAfterMeteor = 1.2f;
+
+    [Header("Death Sink")]
+    [Tooltip("死亡時要下沉的物件。建議指定 PandaBoss 最外層物件，或一個不會被 Animator 控制的 Parent。")]
+    public Transform deadSinkTarget;
+
+    [Tooltip("死亡時，Y 會慢慢降低多少。0.4 代表往下沉 0.4。")]
+    public float deadSinkDistance = 0.4f;
+
+    [Tooltip("死亡下沉花多久完成，單位是秒。")]
+    public float deadSinkDuration = 1.0f;
+
+    [Tooltip("如果你在 Animator 視窗直接把 Dead Bool 打開，是否也要觸發下沉。")]
+    public bool sinkWhenAnimatorDeadBoolIsTrue = true;
 
     [Header("Debug")]
     public bool showClawRange = true;
@@ -81,32 +121,37 @@ public class PandaBossAI : MonoBehaviour
     private float clawTimer = 0f;
     private float plumTimer = 0f;
     private float meteorTimer = 0f;
+    private float globalAttackTimer = 0f;
+
+    private Coroutine deadSinkCoroutine;
+    private bool hasStartedDeathSink = false;
 
     private bool isAttacking = false;
 
     private PlayerHealth playerHealth;
 
     private int throwTriggerHash;
-    private int hit1TriggerHash;
-    private int hit2TriggerHash;
+    private int clawTriggerHash;
+    private int hitTriggerHash;
+    private int hitIndexHash;
+    private int castTriggerHash;
+    private int castIndexHash;
     private int deadBoolHash;
-    private int[] castTriggerHashes;
 
     private void Awake()
     {
         currentHealth = maxHealth;
 
         throwTriggerHash = Animator.StringToHash(throwTriggerName);
-        hit1TriggerHash = Animator.StringToHash(hit1TriggerName);
-        hit2TriggerHash = Animator.StringToHash(hit2TriggerName);
+        clawTriggerHash = Animator.StringToHash(clawTriggerName);
+
+        hitTriggerHash = Animator.StringToHash(hitTriggerName);
+        hitIndexHash = Animator.StringToHash(hitIndexName);
+
+        castTriggerHash = Animator.StringToHash(castTriggerName);
+        castIndexHash = Animator.StringToHash(castIndexName);
+
         deadBoolHash = Animator.StringToHash(deadBoolName);
-
-        castTriggerHashes = new int[castTriggerNames.Length];
-
-        for (int i = 0; i < castTriggerNames.Length; i++)
-        {
-            castTriggerHashes[i] = Animator.StringToHash(castTriggerNames[i]);
-        }
     }
 
     private void Start()
@@ -114,6 +159,11 @@ public class PandaBossAI : MonoBehaviour
         if (animator == null)
         {
             animator = GetComponentInChildren<Animator>();
+        }
+
+        if (deadSinkTarget == null)
+        {
+            deadSinkTarget = transform;
         }
 
         if (player == null)
@@ -150,9 +200,10 @@ public class PandaBossAI : MonoBehaviour
             clawWarning.Hide();
         }
     }
-
     private void Update()
     {
+        CheckAnimatorDeadBoolForSink();
+
         if (isDead) return;
         if (player == null) return;
 
@@ -162,26 +213,37 @@ public class PandaBossAI : MonoBehaviour
 
         FacePlayer();
 
-        float distance = Vector3.Distance(transform.position, player.position);
-
         if (!IsFacingPlayer(attackFacingAngle))
         {
             return;
         }
 
+        if (globalAttackTimer > 0f)
+        {
+            return;
+        }
+
+        float distance = Vector3.Distance(transform.position, player.position);
+
+        // Meteor 是定期技能，優先檢查
         if (meteorTimer <= 0f)
         {
             TryMeteorAttack();
             return;
         }
 
+        // 近距離優先 Claw
         if (distance <= clawRange)
         {
             TryClawAttack();
+            return;
         }
-        else if (distance <= plumRange)
+
+        // 中距離使用 Plum
+        if (distance <= plumRange)
         {
             TryPlumAttack();
+            return;
         }
     }
 
@@ -201,6 +263,16 @@ public class PandaBossAI : MonoBehaviour
         {
             meteorTimer -= Time.deltaTime;
         }
+
+        if (globalAttackTimer > 0f)
+        {
+            globalAttackTimer -= Time.deltaTime;
+        }
+    }
+
+    private void StartGlobalCooldown(float duration)
+    {
+        globalAttackTimer = Mathf.Max(duration, 0f);
     }
 
     private void FacePlayer()
@@ -251,9 +323,9 @@ public class PandaBossAI : MonoBehaviour
     private void TryClawAttack()
     {
         if (clawTimer > 0f) return;
+        if (globalAttackTimer > 0f) return;
 
         clawTimer = clawCooldown;
-
         StartCoroutine(ClawAttackRoutine());
     }
 
@@ -263,7 +335,7 @@ public class PandaBossAI : MonoBehaviour
 
         Debug.Log("Panda Boss prepares Claw Attack!");
 
-        PlayRandomCastAnimation();
+        PlayClawAnimation();
 
         if (clawWarning != null)
         {
@@ -294,6 +366,7 @@ public class PandaBossAI : MonoBehaviour
         }
 
         isAttacking = false;
+        StartGlobalCooldown(globalCooldownAfterClaw);
     }
 
     private bool IsPlayerInClawArea()
@@ -332,9 +405,9 @@ public class PandaBossAI : MonoBehaviour
     private void TryPlumAttack()
     {
         if (plumTimer > 0f) return;
+        if (globalAttackTimer > 0f) return;
 
         plumTimer = plumCooldown;
-
         StartCoroutine(PlumAttackRoutine());
     }
 
@@ -353,7 +426,9 @@ public class PandaBossAI : MonoBehaviour
         ShootPlumProjectile();
 
         isAttacking = false;
+        StartGlobalCooldown(globalCooldownAfterPlum);
     }
+
     private void ShootPlumProjectile()
     {
         if (plumProjectilePrefab == null)
@@ -378,17 +453,14 @@ public class PandaBossAI : MonoBehaviour
 
         if (plumTargetPoint != null)
         {
-            // 優先瞄準 Inspector 指定的位置，例如 Camera
             targetPosition = plumTargetPoint.position;
         }
         else if (Camera.main != null)
         {
-            // 沒指定時，才使用 Main Camera
             targetPosition = Camera.main.transform.position;
         }
         else
         {
-            // 最後備案：瞄準玩家身體中間
             targetPosition = player.position + Vector3.up * 1.0f;
         }
 
@@ -415,8 +487,6 @@ public class PandaBossAI : MonoBehaviour
         {
             plumProjectile.damage = plumDamage;
             plumProjectile.speed = plumProjectileSpeed;
-
-            // 傳入目標位置，梅花會朝該 XYZ 位置飛
             plumProjectile.Init(targetPosition);
         }
         else
@@ -428,9 +498,9 @@ public class PandaBossAI : MonoBehaviour
     private void TryMeteorAttack()
     {
         if (meteorTimer > 0f) return;
+        if (globalAttackTimer > 0f) return;
 
-        meteorTimer = meteorInterval;
-
+        meteorTimer = meteorCooldown;
         StartCoroutine(MeteorAttackRoutine());
     }
 
@@ -447,11 +517,11 @@ public class PandaBossAI : MonoBehaviour
         for (int i = 0; i < targetPositions.Count; i++)
         {
             SpawnMeteor(targetPositions[i]);
-
             yield return new WaitForSeconds(meteorSpawnDelay);
         }
 
         isAttacking = false;
+        StartGlobalCooldown(globalCooldownAfterMeteor);
     }
 
     private void SpawnMeteor(Vector3 targetPosition)
@@ -620,15 +690,95 @@ public class PandaBossAI : MonoBehaviour
             animator.SetBool(deadBoolHash, true);
         }
 
+        StartDeadSink();
+
         Debug.Log("Panda Boss died!");
+    }
+
+    private void CheckAnimatorDeadBoolForSink()
+    {
+        if (!sinkWhenAnimatorDeadBoolIsTrue) return;
+        if (hasStartedDeathSink) return;
+        if (animator == null) return;
+
+        // 讓你直接在 Animator / Inspector 把 Dead Bool 打開時，也能觸發下沉。
+        if (animator.GetBool(deadBoolHash))
+        {
+            isDead = true;
+            isAttacking = false;
+
+            StopAllCoroutines();
+
+            if (clawWarning != null)
+            {
+                clawWarning.Hide();
+            }
+
+            StartDeadSink();
+
+            Debug.Log("Panda Boss dead sink triggered by Animator Dead bool.");
+        }
+    }
+
+    private void StartDeadSink()
+    {
+        if (hasStartedDeathSink) return;
+
+        hasStartedDeathSink = true;
+
+        if (deadSinkTarget == null)
+        {
+            deadSinkTarget = transform;
+        }
+
+        if (deadSinkCoroutine != null)
+        {
+            StopCoroutine(deadSinkCoroutine);
+        }
+
+        deadSinkCoroutine = StartCoroutine(DeadSinkRoutine());
+    }
+
+    private IEnumerator DeadSinkRoutine()
+    {
+        Vector3 startPosition = deadSinkTarget.position;
+        Vector3 targetPosition = startPosition + Vector3.down * deadSinkDistance;
+
+        float duration = Mathf.Max(deadSinkDuration, 0.01f);
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+
+            deadSinkTarget.position = Vector3.Lerp(startPosition, targetPosition, t);
+
+            yield return null;
+        }
+
+        deadSinkTarget.position = targetPosition;
+        deadSinkCoroutine = null;
+    }
+
+    private void PlayClawAnimation()
+    {
+        if (animator == null) return;
+
+        animator.ResetTrigger(hitTriggerHash);
+        animator.ResetTrigger(castTriggerHash);
+        animator.ResetTrigger(throwTriggerHash);
+
+        animator.SetTrigger(clawTriggerHash);
     }
 
     private void PlayThrowAnimation()
     {
         if (animator == null) return;
 
-        animator.ResetTrigger(hit1TriggerHash);
-        animator.ResetTrigger(hit2TriggerHash);
+        animator.ResetTrigger(hitTriggerHash);
+        animator.ResetTrigger(castTriggerHash);
+        animator.ResetTrigger(clawTriggerHash);
 
         animator.SetTrigger(throwTriggerHash);
     }
@@ -637,25 +787,33 @@ public class PandaBossAI : MonoBehaviour
     {
         if (animator == null) return;
 
-        int randomHit = Random.Range(0, 2);
+        int count = Mathf.Max(hitAnimationCount, 1);
+        int randomHitIndex = Random.Range(0, count);
 
-        if (randomHit == 0)
-        {
-            animator.SetTrigger(hit1TriggerHash);
-        }
-        else
-        {
-            animator.SetTrigger(hit2TriggerHash);
-        }
+        animator.ResetTrigger(clawTriggerHash);
+        animator.ResetTrigger(castTriggerHash);
+        animator.ResetTrigger(throwTriggerHash);
+
+        animator.SetInteger(hitIndexHash, randomHitIndex);
+        animator.SetTrigger(hitTriggerHash);
+
+        Debug.Log("Panda Boss Hit Animation Index: " + randomHitIndex);
     }
 
     private void PlayRandomCastAnimation()
     {
         if (animator == null) return;
-        if (castTriggerHashes == null || castTriggerHashes.Length == 0) return;
 
-        int randomIndex = Random.Range(0, castTriggerHashes.Length);
-        animator.SetTrigger(castTriggerHashes[randomIndex]);
+        int count = Mathf.Max(castAnimationCount, 1);
+        int randomCastIndex = Random.Range(0, count);
+
+        animator.ResetTrigger(clawTriggerHash);
+        animator.ResetTrigger(throwTriggerHash);
+
+        animator.SetInteger(castIndexHash, randomCastIndex);
+        animator.SetTrigger(castTriggerHash);
+
+        Debug.Log("Panda Boss Cast Animation Index: " + randomCastIndex);
     }
 
     private void OnDrawGizmosSelected()
