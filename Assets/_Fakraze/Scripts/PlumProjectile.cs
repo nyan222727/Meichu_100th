@@ -8,9 +8,10 @@ public class PlumProjectile : MonoBehaviour
 
     private Vector3 moveDirection;
 
-    public void Init(Vector3 direction)
+    // 傳入目標位置，梅花會朝該 XYZ 位置飛
+    public void Init(Vector3 targetPosition)
     {
-        moveDirection = direction.normalized;
+        moveDirection = (targetPosition - transform.position).normalized;
         Destroy(gameObject, lifeTime);
     }
 

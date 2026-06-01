@@ -499,12 +499,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 407311529}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -4.94}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 563561085}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &410087039
 GameObject:
@@ -657,6 +657,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 407311533}
   - {fileID: 186509210}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -842,8 +843,9 @@ MonoBehaviour:
   clawDamage: 15
   clawWarning: {fileID: 1282390650}
   clawWarningTime: 0.5
-  plumProjectilePrefab: {fileID: 2175976753602199945, guid: 0374b0346fbe67e48b1b2fc136cf745a, type: 3}
+  plumProjectilePrefab: {fileID: 3415052661125370898, guid: ca9decb9107755443bd0daa69610bdd2, type: 3}
   plumSpawnPoint: {fileID: 401005299}
+  plumTargetPoint: {fileID: 407311533}
   plumDamage: 10
   plumProjectileSpeed: 6
   plumWindupTime: 0.7
@@ -990,7 +992,6 @@ SceneRoots:
   m_Roots:
   - {fileID: 410087041}
   - {fileID: 832575519}
-  - {fileID: 407311533}
   - {fileID: 157204894}
   - {fileID: 1204876051}
   - {fileID: 563561085}

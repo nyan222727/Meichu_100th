@@ -55,6 +55,7 @@ public class PandaBossAI : MonoBehaviour
     [Header("Plum Attack")]
     public GameObject plumProjectilePrefab;
     public Transform plumSpawnPoint;
+    public Transform plumTargetPoint;
     public int plumDamage = 10;
     public float plumProjectileSpeed = 6f;
     public float plumWindupTime = 0.3f;
@@ -353,7 +354,6 @@ public class PandaBossAI : MonoBehaviour
 
         isAttacking = false;
     }
-
     private void ShootPlumProjectile()
     {
         if (plumProjectilePrefab == null)
@@ -374,8 +374,25 @@ public class PandaBossAI : MonoBehaviour
             return;
         }
 
-        Vector3 shootDirection = player.position - plumSpawnPoint.position;
-        shootDirection.y = 0f;
+        Vector3 targetPosition;
+
+        if (plumTargetPoint != null)
+        {
+            // 優先瞄準 Inspector 指定的位置，例如 Camera
+            targetPosition = plumTargetPoint.position;
+        }
+        else if (Camera.main != null)
+        {
+            // 沒指定時，才使用 Main Camera
+            targetPosition = Camera.main.transform.position;
+        }
+        else
+        {
+            // 最後備案：瞄準玩家身體中間
+            targetPosition = player.position + Vector3.up * 1.0f;
+        }
+
+        Vector3 shootDirection = targetPosition - plumSpawnPoint.position;
 
         if (shootDirection.sqrMagnitude < 0.001f)
         {
@@ -398,7 +415,9 @@ public class PandaBossAI : MonoBehaviour
         {
             plumProjectile.damage = plumDamage;
             plumProjectile.speed = plumProjectileSpeed;
-            plumProjectile.Init(shootDirection);
+
+            // 傳入目標位置，梅花會朝該 XYZ 位置飛
+            plumProjectile.Init(targetPosition);
         }
         else
         {
