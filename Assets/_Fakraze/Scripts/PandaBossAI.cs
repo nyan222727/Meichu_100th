@@ -49,6 +49,9 @@ public class PandaBossAI : MonoBehaviour
     [Tooltip("死亡 Bool 名稱")]
     public string deadBoolName = "Dead";
 
+    [Header("Sound")]
+    public PandaSoundController soundController;
+
     [Header("Attack Range")]
     public float clawRange = 2.0f;
     public float plumRange = 8.0f;
@@ -159,6 +162,11 @@ public class PandaBossAI : MonoBehaviour
         if (animator == null)
         {
             animator = GetComponentInChildren<Animator>();
+        }
+
+        if (soundController == null)
+        {
+            soundController = GetComponent<PandaSoundController>();
         }
 
         if (deadSinkTarget == null)
@@ -337,6 +345,11 @@ public class PandaBossAI : MonoBehaviour
 
         PlayClawAnimation();
 
+        if (soundController != null)
+        {
+            soundController.PlayClawSound();
+        }
+
         if (clawWarning != null)
         {
             clawWarning.Show(clawRange, clawAngle);
@@ -418,6 +431,11 @@ public class PandaBossAI : MonoBehaviour
         Debug.Log("Panda Boss prepares Plum Attack!");
 
         PlayThrowAnimation();
+
+        if (soundController != null)
+        {
+            soundController.PlayThrowSound();
+        }
 
         yield return new WaitForSeconds(plumWindupTime);
 
@@ -511,6 +529,11 @@ public class PandaBossAI : MonoBehaviour
         Debug.Log("Panda Boss summons Meatball Meteors!");
 
         PlayRandomCastAnimation();
+
+        if (soundController != null)
+        {
+            soundController.PlayCastSound();
+        }
 
         List<Vector3> targetPositions = GetNonOverlappingMeteorTargetPositions();
 
@@ -669,6 +692,11 @@ public class PandaBossAI : MonoBehaviour
         }
 
         PlayRandomHitAnimation();
+
+        if (soundController != null)
+        {
+            soundController.PlayHitSound();
+        }
     }
 
     private void Die()
@@ -691,6 +719,11 @@ public class PandaBossAI : MonoBehaviour
         }
 
         StartDeadSink();
+
+        if (soundController != null)
+        {
+            soundController.PlayDeathSound();
+        }
 
         Debug.Log("Panda Boss died!");
     }
@@ -715,6 +748,11 @@ public class PandaBossAI : MonoBehaviour
             }
 
             StartDeadSink();
+
+            if (soundController != null)
+            {
+                soundController.PlayDeathSound();
+            }
 
             Debug.Log("Panda Boss dead sink triggered by Animator Dead bool.");
         }

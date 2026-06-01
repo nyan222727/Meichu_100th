@@ -799,6 +799,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1204876051}
   - component: {fileID: 1204876050}
+  - component: {fileID: 1204876053}
+  - component: {fileID: 1204876052}
   m_Layer: 0
   m_Name: PandaBoss
   m_TagString: Untagged
@@ -828,6 +830,7 @@ MonoBehaviour:
   currentHealth: 0
   animator: {fileID: 1383383260}
   throwTriggerName: Throw
+  clawTriggerName: Claw
   hitTriggerName: Hit
   hitIndexName: HitIndex
   castTriggerName: Cast
@@ -835,6 +838,7 @@ MonoBehaviour:
   hitAnimationCount: 2
   castAnimationCount: 4
   deadBoolName: Dead
+  soundController: {fileID: 1204876053}
   clawRange: 3
   plumRange: 8
   attackFacingAngle: 10
@@ -887,6 +891,126 @@ Transform:
   - {fileID: 401005299}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!82 &1204876052
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1204876049}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &1204876053
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1204876049}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09c468a63b160b640b6ef040f3550050, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  audioSource: {fileID: 1204876052}
+  clawSound: {fileID: 8300000, guid: f85c05cb8fb367b478f8dbda9ac7ee50, type: 3}
+  throwSound: {fileID: 8300000, guid: e39a31bda88a7d94ca9972d9ea17fd74, type: 3}
+  castSound: {fileID: 8300000, guid: f85c05cb8fb367b478f8dbda9ac7ee50, type: 3}
+  hitSound: {fileID: 8300000, guid: f85c05cb8fb367b478f8dbda9ac7ee50, type: 3}
+  deathSound: {fileID: 8300000, guid: e39a31bda88a7d94ca9972d9ea17fd74, type: 3}
+  clawSoundDelay: 0
+  throwSoundDelay: 0.6
+  castSoundDelay: 0
+  hitSoundDelay: 0
+  deathSoundDelay: 0
 --- !u!1 &1282390649
 GameObject:
   m_ObjectHideFlags: 0
