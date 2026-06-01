@@ -1,11 +1,13 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class PandaPlacement : MonoBehaviour
 {
     [SerializeField] private GameObject pandaPrefab;
     [SerializeField] private ReticleBehaviour reticle;
     [SerializeField] private DrivingSurfaceManager drivingSurfaceManager;
-    [SerializeField] private Drag projectileLauncher;
+    [FormerlySerializedAs("projectileLauncher")]
+    [SerializeField] private PlayerCombatController combatController;
     [SerializeField] private bool lockPlaneAfterPlacement = true;
     [SerializeField] private bool hideReticleAfterPlacement = true;
 
@@ -36,14 +38,14 @@ public class PandaPlacement : MonoBehaviour
             reticle.gameObject.SetActive(false);
         }
 
-        if (projectileLauncher == null)
+        if (combatController == null)
         {
-            projectileLauncher = FindFirstObjectByType<Drag>(FindObjectsInactive.Include);
+            combatController = FindFirstObjectByType<PlayerCombatController>(FindObjectsInactive.Include);
         }
 
-        if (projectileLauncher != null)
+        if (combatController != null)
         {
-            projectileLauncher.enabled = true;
+            combatController.enabled = true;
         }
     }
 
