@@ -854,6 +854,10 @@ MonoBehaviour:
   clawDamage: 15
   clawWarning: {fileID: 1282390650}
   clawWarningTime: 0.5
+  clawWeaponObject: {fileID: 2119073205}
+  clawWeaponShowDelay: 0
+  clawWeaponHideDelay: 1
+  hideClawWeaponOnStart: 1
   plumProjectilePrefab: {fileID: 3415052661125370898, guid: ca9decb9107755443bd0daa69610bdd2, type: 3}
   plumSpawnPoint: {fileID: 401005299}
   plumTargetPoint: {fileID: 407311533}

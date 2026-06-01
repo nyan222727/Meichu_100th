@@ -67,6 +67,19 @@ public class PandaBossAI : MonoBehaviour
     public ClawWarning clawWarning;
     public float clawWarningTime = 0.5f;
 
+    [Header("Claw Weapon")]
+    [Tooltip("Claw attack 時顯示的武器物件，例如掛在手上的 OlooPivot。")]
+    public GameObject clawWeaponObject;
+
+    [Tooltip("Claw attack 開始後幾秒顯示武器。")]
+    public float clawWeaponShowDelay = 0f;
+
+    [Tooltip("Claw attack 開始後幾秒隱藏武器。")]
+    public float clawWeaponHideDelay = 0.9f;
+
+    [Tooltip("遊戲開始時是否自動隱藏 Claw Weapon。")]
+    public bool hideClawWeaponOnStart = true;
+
     [Header("Plum Attack")]
     public GameObject plumProjectilePrefab;
     public Transform plumSpawnPoint;
@@ -127,6 +140,7 @@ public class PandaBossAI : MonoBehaviour
     private float globalAttackTimer = 0f;
 
     private Coroutine deadSinkCoroutine;
+    private Coroutine clawWeaponCoroutine;
     private bool hasStartedDeathSink = false;
 
     private bool isAttacking = false;
@@ -206,6 +220,11 @@ public class PandaBossAI : MonoBehaviour
         if (clawWarning != null)
         {
             clawWarning.Hide();
+        }
+
+        if (hideClawWeaponOnStart && clawWeaponObject != null)
+        {
+            clawWeaponObject.SetActive(false);
         }
     }
     private void Update()
@@ -345,6 +364,8 @@ public class PandaBossAI : MonoBehaviour
 
         PlayClawAnimation();
 
+        StartClawWeaponRoutine();
+
         if (soundController != null)
         {
             soundController.PlayClawSound();
@@ -376,6 +397,11 @@ public class PandaBossAI : MonoBehaviour
         if (clawWarning != null)
         {
             clawWarning.Hide();
+        }
+
+        if (clawWeaponCoroutine == null && clawWeaponObject != null)
+        {
+            clawWeaponObject.SetActive(false);
         }
 
         isAttacking = false;
@@ -713,6 +739,8 @@ public class PandaBossAI : MonoBehaviour
             clawWarning.Hide();
         }
 
+        HideClawWeaponImmediately();
+
         if (animator != null)
         {
             animator.SetBool(deadBoolHash, true);
@@ -746,6 +774,8 @@ public class PandaBossAI : MonoBehaviour
             {
                 clawWarning.Hide();
             }
+
+            HideClawWeaponImmediately();
 
             StartDeadSink();
 
@@ -797,6 +827,57 @@ public class PandaBossAI : MonoBehaviour
 
         deadSinkTarget.position = targetPosition;
         deadSinkCoroutine = null;
+    }
+
+    private void StartClawWeaponRoutine()
+    {
+        if (clawWeaponObject == null) return;
+
+        if (clawWeaponCoroutine != null)
+        {
+            StopCoroutine(clawWeaponCoroutine);
+        }
+
+        clawWeaponCoroutine = StartCoroutine(ClawWeaponRoutine());
+    }
+
+    private IEnumerator ClawWeaponRoutine()
+    {
+        if (clawWeaponObject == null) yield break;
+
+        float showDelay = Mathf.Max(clawWeaponShowDelay, 0f);
+        float hideDelay = Mathf.Max(clawWeaponHideDelay, showDelay);
+
+        if (showDelay > 0f)
+        {
+            yield return new WaitForSeconds(showDelay);
+        }
+
+        clawWeaponObject.SetActive(true);
+
+        float visibleDuration = hideDelay - showDelay;
+
+        if (visibleDuration > 0f)
+        {
+            yield return new WaitForSeconds(visibleDuration);
+        }
+
+        clawWeaponObject.SetActive(false);
+        clawWeaponCoroutine = null;
+    }
+
+    private void HideClawWeaponImmediately()
+    {
+        if (clawWeaponCoroutine != null)
+        {
+            StopCoroutine(clawWeaponCoroutine);
+            clawWeaponCoroutine = null;
+        }
+
+        if (clawWeaponObject != null)
+        {
+            clawWeaponObject.SetActive(false);
+        }
     }
 
     private void PlayClawAnimation()
