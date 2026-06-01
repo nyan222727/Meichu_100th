@@ -8,15 +8,34 @@ public class PandaBossAI : MonoBehaviour
     public Transform player;
 
     [Header("Boss Settings")]
-    // Maximum angular speed (degrees/sec) when angle error is at or above `maxAngleForSpeed`.
     public float maxAngularSpeed = 60f;
-    // Minimum angular speed (degrees/sec) when angle error is at or below `minAngleForSpeed`.
     public float minAngularSpeed = 30f;
-    // Angle (degrees) at which angular speed equals `minAngleForSpeed`.
     public float minAngleForSpeed = 30f;
-    // Angle (degrees) at which angular speed equals `maxAngularSpeed`.
     public float maxAngleForSpeed = 90f;
     public float faceOffsetY = 180f;
+
+    [Header("Boss Health")]
+    public int maxHealth = 100;
+    public int currentHealth;
+    private bool isDead = false;
+
+    [Header("Animation")]
+    public Animator animator;
+
+    [Tooltip("你的 Animator 裡 Throw state 對應的 Trigger 名稱")]
+    public string throwTriggerName = "Throw";
+
+    [Tooltip("受傷動畫 1 的 Trigger 名稱")]
+    public string hit1TriggerName = "Hit1";
+
+    [Tooltip("受傷動畫 2 的 Trigger 名稱")]
+    public string hit2TriggerName = "Hit2";
+
+    [Tooltip("召喚/施法動畫 Trigger，可以放 Cast1, Cast2, Cast3, Cast4")]
+    public string[] castTriggerNames = { "Cast1", "Cast2", "Cast3", "Cast4" };
+
+    [Tooltip("死亡 Bool 名稱")]
+    public string deadBoolName = "Dead";
 
     [Header("Attack Range")]
     public float clawRange = 2.0f;
@@ -66,8 +85,36 @@ public class PandaBossAI : MonoBehaviour
 
     private PlayerHealth playerHealth;
 
+    private int throwTriggerHash;
+    private int hit1TriggerHash;
+    private int hit2TriggerHash;
+    private int deadBoolHash;
+    private int[] castTriggerHashes;
+
+    private void Awake()
+    {
+        currentHealth = maxHealth;
+
+        throwTriggerHash = Animator.StringToHash(throwTriggerName);
+        hit1TriggerHash = Animator.StringToHash(hit1TriggerName);
+        hit2TriggerHash = Animator.StringToHash(hit2TriggerName);
+        deadBoolHash = Animator.StringToHash(deadBoolName);
+
+        castTriggerHashes = new int[castTriggerNames.Length];
+
+        for (int i = 0; i < castTriggerNames.Length; i++)
+        {
+            castTriggerHashes[i] = Animator.StringToHash(castTriggerNames[i]);
+        }
+    }
+
     private void Start()
     {
+        if (animator == null)
+        {
+            animator = GetComponentInChildren<Animator>();
+        }
+
         if (player == null)
         {
             GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
@@ -105,24 +152,22 @@ public class PandaBossAI : MonoBehaviour
 
     private void Update()
     {
+        if (isDead) return;
         if (player == null) return;
 
         UpdateTimers();
 
-        // 攻擊期間不轉向，也不重新選擇攻擊
         if (isAttacking) return;
 
         FacePlayer();
 
         float distance = Vector3.Distance(transform.position, player.position);
 
-        // 如果熊貓還沒有面向玩家，就先不要攻擊
         if (!IsFacingPlayer(attackFacingAngle))
         {
             return;
         }
 
-        // 貢丸隕石是定期的場地壓力技能，優先於一般遠距離攻擊
         if (meteorTimer <= 0f)
         {
             TryMeteorAttack();
@@ -217,6 +262,8 @@ public class PandaBossAI : MonoBehaviour
 
         Debug.Log("Panda Boss prepares Claw Attack!");
 
+        PlayRandomCastAnimation();
+
         if (clawWarning != null)
         {
             clawWarning.Show(clawRange, clawAngle);
@@ -296,6 +343,8 @@ public class PandaBossAI : MonoBehaviour
 
         Debug.Log("Panda Boss prepares Plum Attack!");
 
+        PlayThrowAnimation();
+
         yield return new WaitForSeconds(plumWindupTime);
 
         Debug.Log("Panda Boss shoots Plum Blossom!");
@@ -372,6 +421,8 @@ public class PandaBossAI : MonoBehaviour
 
         Debug.Log("Panda Boss summons Meatball Meteors!");
 
+        PlayRandomCastAnimation();
+
         List<Vector3> targetPositions = GetNonOverlappingMeteorTargetPositions();
 
         for (int i = 0; i < targetPositions.Count; i++)
@@ -381,7 +432,6 @@ public class PandaBossAI : MonoBehaviour
             yield return new WaitForSeconds(meteorSpawnDelay);
         }
 
-        // 熊貓只負責召喚；warning、掉落、撞擊傷害全部交給 Meteor.cs 自己處理。
         isAttacking = false;
     }
 
@@ -435,7 +485,6 @@ public class PandaBossAI : MonoBehaviour
             return hit.point;
         }
 
-        // 如果沒有設定 Ground Layer 或射線沒有打到地板，就退回玩家附近的位置
         return new Vector3(randomPosition.x, player.position.y, randomPosition.z);
     }
 
@@ -478,8 +527,6 @@ public class PandaBossAI : MonoBehaviour
 
             if (!foundValidPosition)
             {
-                // 如果半徑太小或隕石數太多，找不到完全不重疊的位置時，
-                // 退而求其次選擇目前嘗試中離其他落點最遠的位置。
                 targets.Add(bestCandidate);
 
                 Debug.LogWarning(
@@ -515,6 +562,81 @@ public class PandaBossAI : MonoBehaviour
         }
 
         return nearestDistance;
+    }
+
+    public void TakeDamage(int damage)
+    {
+        if (isDead) return;
+
+        currentHealth -= damage;
+        currentHealth = Mathf.Max(currentHealth, 0);
+
+        Debug.Log("Panda Boss takes " + damage + " damage. Current HP: " + currentHealth);
+
+        if (currentHealth <= 0)
+        {
+            Die();
+            return;
+        }
+
+        PlayRandomHitAnimation();
+    }
+
+    private void Die()
+    {
+        if (isDead) return;
+
+        isDead = true;
+        isAttacking = false;
+
+        StopAllCoroutines();
+
+        if (clawWarning != null)
+        {
+            clawWarning.Hide();
+        }
+
+        if (animator != null)
+        {
+            animator.SetBool(deadBoolHash, true);
+        }
+
+        Debug.Log("Panda Boss died!");
+    }
+
+    private void PlayThrowAnimation()
+    {
+        if (animator == null) return;
+
+        animator.ResetTrigger(hit1TriggerHash);
+        animator.ResetTrigger(hit2TriggerHash);
+
+        animator.SetTrigger(throwTriggerHash);
+    }
+
+    private void PlayRandomHitAnimation()
+    {
+        if (animator == null) return;
+
+        int randomHit = Random.Range(0, 2);
+
+        if (randomHit == 0)
+        {
+            animator.SetTrigger(hit1TriggerHash);
+        }
+        else
+        {
+            animator.SetTrigger(hit2TriggerHash);
+        }
+    }
+
+    private void PlayRandomCastAnimation()
+    {
+        if (animator == null) return;
+        if (castTriggerHashes == null || castTriggerHashes.Length == 0) return;
+
+        int randomIndex = Random.Range(0, castTriggerHashes.Length);
+        animator.SetTrigger(castTriggerHashes[randomIndex]);
     }
 
     private void OnDrawGizmosSelected()

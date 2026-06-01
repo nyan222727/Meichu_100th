@@ -363,7 +363,7 @@ Transform:
   m_GameObject: {fileID: 401005298}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalPosition: {x: 0.55, y: 1.452, z: 0.062}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -823,6 +823,18 @@ MonoBehaviour:
   minAngleForSpeed: 15
   maxAngleForSpeed: 90
   faceOffsetY: 0
+  maxHealth: 100
+  currentHealth: 0
+  animator: {fileID: 0}
+  throwTriggerName: Throw
+  hit1TriggerName: Hit1
+  hit2TriggerName: Hit2
+  castTriggerNames:
+  - Cast1
+  - Cast2
+  - Cast3
+  - Cast4
+  deadBoolName: Dead
   clawRange: 3
   plumRange: 8
   attackFacingAngle: 10
@@ -834,7 +846,7 @@ MonoBehaviour:
   plumSpawnPoint: {fileID: 401005299}
   plumDamage: 10
   plumProjectileSpeed: 6
-  plumWindupTime: 0.3
+  plumWindupTime: 0.7
   meatballMeteorPrefab: {fileID: 2407628490172359163, guid: 25b0440db03957d40a45ea0f86850141, type: 3}
   meteorInterval: 6
   meteorCount: 10
