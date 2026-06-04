@@ -1,0 +1,18 @@
+# Materials for plum_blossom.obj
+newmtl PetalPink
+Ka 1.000 0.680 0.820
+Kd 1.000 0.420 0.680
+Ks 0.180 0.120 0.160
+Ns 45.000
+
+newmtl CenterYellow
+Ka 1.000 0.820 0.240
+Kd 1.000 0.720 0.120
+Ks 0.250 0.220 0.120
+Ns 50.000
+
+newmtl StamenRed
+Ka 0.780 0.050 0.120
+Kd 0.780 0.050 0.120
+Ks 0.150 0.040 0.040
+Ns 30.000
