@@ -769,6 +769,8 @@ GameObject:
   - component: {fileID: 1923108516}
   - component: {fileID: 1923108517}
   - component: {fileID: 1923108515}
+  - component: {fileID: 1923108518}
+  - component: {fileID: 1923108519}
   m_Layer: 0
   m_Name: LauncherScript
   m_TagString: Untagged
@@ -862,12 +864,13 @@ MonoBehaviour:
   projectileAttack: {fileID: 1923108516}
   rangedAttackSettings: {fileID: 11400000, guid: 2502ac8a2ecf4187adc06114736a2db8, type: 2}
   meleeAttack: {fileID: 1923108517}
-  attackModeSplitY: 0.5
-  chargeCenterViewport: {x: 0.5, y: 0.5}
-  blueRadius: 0.15
-  greenRadius: 0.18
-  yellowRadius: 0.235
-  redRadius: 0.29
+  attackModeSplitX: 0.5
+  chargeCenterViewport: {x: 0.5, y: 0.02}
+  aimViewportPosition: {x: 0.5, y: 0.5}
+  blueRadius: 0.2
+  greenRadius: 0.28
+  yellowRadius: 0.38
+  redRadius: 0.5
   chargeDistanceForMax: 6
   minChargeMultiplier: 1
   maxChargeMultiplier: 3
@@ -881,6 +884,8 @@ MonoBehaviour:
   ultimateTargetRadius: 0.045
   ultimateOuterMinRadius: 0.35
   ultimateOuterMaxRadius: 0.43
+  ultimateTargetFanMinAngle: 35
+  ultimateTargetFanMaxAngle: 145
   ultimateSpawnDistanceFromCamera: 1.1
   ultimateFoxDamage: 45
   playerHealth: {fileID: 0}
@@ -888,11 +893,62 @@ MonoBehaviour:
   healthBarSideMargin: 0.035
   healthBarWidth: 12
   healthBarAlpha: 0.72
+  canvasHud: {fileID: 1923108518}
   logAttacks: 1
-  showDebugOverlay: 1
+  showDebugOverlay: 0
   overlaySegments: 96
   overlayLineWidth: 3
   chargeFillMaxAlpha: 0.16
+--- !u!114 &1923108518
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1923108512}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93cf86ec04d24d0cac556944de452ad1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  canvas: {fileID: 0}
+  root: {fileID: 0}
+  meleeIconSprite: {fileID: 0}
+  rangedIconSprite: {fileID: 0}
+  ultimateIconSprite: {fileID: 0}
+  crosshairSprite: {fileID: 0}
+  referenceResolution: {x: 390, y: 844}
+  healthBarOffset: {x: 14, y: -15}
+  healthBarSize: {x: 108, y: 10}
+  iconSize: 50
+  crosshairSize: 35
+  releaseFlashDuration: 0.26
+  healthBackgroundColor: {r: 0.86, g: 0.86, b: 0.86, a: 0.9}
+  healthFillColor: {r: 0.35, g: 1, b: 0.35, a: 0.96}
+  meleeZoneColor: {r: 1, g: 0.95, b: 0.45, a: 0.45}
+  rangedZoneColor: {r: 1, g: 0.36, b: 0.38, a: 0.36}
+  blueZoneColor: {r: 0.46, g: 0.91, b: 1, a: 0.58}
+  chargeFillColor: {r: 0.1, g: 0.55, b: 1, a: 0.22}
+  outerArcColor: {r: 0, g: 0, b: 0, a: 0.82}
+  meleeFlashColor: {r: 1, g: 0.96, b: 0.3, a: 1}
+  rangedFlashColor: {r: 1, g: 0.25, b: 0.35, a: 1}
+  ultimateColor: {r: 0.7, g: 0.68, b: 1, a: 0.95}
+  iconColor: {r: 0.04, g: 0.04, b: 0.04, a: 0.92}
+  crosshairColor: {r: 0.78, g: 0.78, b: 0.78, a: 0.78}
+--- !u!114 &1923108519
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1923108512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c076cfbbdd8849bb85220c0cb94b0fdd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableOnStart: 1
+  consumeBackButton: 1
 --- !u!1 &2108841558
 GameObject:
   m_ObjectHideFlags: 0

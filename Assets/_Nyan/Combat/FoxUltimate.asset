@@ -19,5 +19,7 @@ MonoBehaviour:
   targetRadius: 0.045
   outerMinRadius: 0.35
   outerMaxRadius: 0.43
+  targetFanMinAngle: 35
+  targetFanMaxAngle: 145
   spawnDistanceFromCamera: 1.1
   damage: 45

@@ -10,6 +10,8 @@ public class FoxUltimateSettings : ScriptableObject
     [SerializeField] private float targetRadius = 0.045f;
     [SerializeField] private float outerMinRadius = 0.35f;
     [SerializeField] private float outerMaxRadius = 0.43f;
+    [SerializeField, Range(0f, 180f)] private float targetFanMinAngle = 35f;
+    [SerializeField, Range(0f, 180f)] private float targetFanMaxAngle = 145f;
     [SerializeField] private float spawnDistanceFromCamera = 1.1f;
     [SerializeField] private int damage = 45;
 
@@ -24,6 +26,8 @@ public class FoxUltimateSettings : ScriptableObject
             TargetRadius = targetRadius,
             OuterMinRadius = outerMinRadius,
             OuterMaxRadius = outerMaxRadius,
+            TargetFanMinAngle = targetFanMinAngle,
+            TargetFanMaxAngle = targetFanMaxAngle,
             SpawnDistanceFromCamera = spawnDistanceFromCamera,
             FoxDamage = damage
         };
@@ -37,6 +41,8 @@ public class FoxUltimateSettings : ScriptableObject
         targetRadius = Mathf.Max(0.01f, targetRadius);
         outerMinRadius = Mathf.Max(0f, outerMinRadius);
         outerMaxRadius = Mathf.Max(outerMinRadius, outerMaxRadius);
+        targetFanMinAngle = Mathf.Clamp(targetFanMinAngle, 0f, 180f);
+        targetFanMaxAngle = Mathf.Clamp(Mathf.Max(targetFanMaxAngle, targetFanMinAngle), 0f, 180f);
         spawnDistanceFromCamera = Mathf.Max(0.01f, spawnDistanceFromCamera);
         damage = Mathf.Max(0, damage);
     }

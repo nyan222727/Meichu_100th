@@ -19,3 +19,9 @@ approval_mode = "approve"
 approval_mode = "approve"
 
 
+[features]
+rmcp_client = true
+
+[mcp_servers.figma]
+transport = "streamable_http"
+url = "https://mcp.figma.com/mcp"

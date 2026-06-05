@@ -40,10 +40,13 @@ public sealed class PlayerCombatHud
 
     private void DrawAttackModeSplitLine(PlayerCombatHudSettings settings, PlayerCombatHudState state)
     {
-        float y = (1f - settings.AttackModeSplitY) * Screen.height;
-        float centerX = settings.ChargeCenterViewport.x * Screen.width;
+        float x = settings.AttackModeSplitX * Screen.width;
+        DrawLine(new Vector2(x, 0f), new Vector2(x, Screen.height), new Color(0f, 0f, 0f, 0.55f), settings.OverlayLineWidth + 1f);
+
+        float y = (1f - settings.AimViewportPosition.y) * Screen.height;
+        float centerX = settings.AimViewportPosition.x * Screen.width;
         float sideMargin = settings.HealthBarSideMargin * Screen.width;
-        float centerGap = Mathf.Max(settings.BlueRadius * 0.55f * GetChargeRadiusScale(), settings.HealthBarCenterGap * GetChargeRadiusScale());
+        float centerGap = Mathf.Max(18f, settings.HealthBarCenterGap * GetChargeRadiusScale());
         float leftEdge = Mathf.Clamp(sideMargin, 0f, centerX);
         float rightEdge = Mathf.Clamp(Screen.width - sideMargin, centerX, Screen.width);
         float leftInner = Mathf.Max(leftEdge, centerX - centerGap);
@@ -76,8 +79,8 @@ public sealed class PlayerCombatHud
 
     private void DrawCrosshair(PlayerCombatHudSettings settings)
     {
-        Vector2 center = ViewportToGuiPoint(settings.ChargeCenterViewport);
-        float size = Mathf.Max(8f, settings.BlueRadius * Mathf.Min(Screen.width, Screen.height) * 0.45f);
+        Vector2 center = ViewportToGuiPoint(settings.AimViewportPosition);
+        float size = Mathf.Max(8f, settings.BlueRadius * Mathf.Min(Screen.width, Screen.height) * 0.28f);
         DrawLine(center + Vector2.left * size, center + Vector2.right * size, Color.white, settings.OverlayLineWidth);
         DrawLine(center + Vector2.down * size, center + Vector2.up * size, Color.white, settings.OverlayLineWidth);
     }
@@ -121,7 +124,7 @@ public sealed class PlayerCombatHud
         };
 
         GUI.color = Color.white;
-        GUI.Label(new Rect(16f, 12f, Screen.width - 32f, 34f), "Start in BLUE. Move inside BLUE to charge. Release lower for bow, upper for melee.", style);
+        GUI.Label(new Rect(16f, 12f, Screen.width - 32f, 34f), "Start in BLUE. Release left for melee, right for bow.", style);
 
         if (!state.HasPointerPosition)
         {
@@ -212,8 +215,9 @@ public sealed class PlayerCombatHud
 public struct PlayerCombatHudSettings
 {
     public bool ShowDebugOverlay;
-    public float AttackModeSplitY;
+    public float AttackModeSplitX;
     public Vector2 ChargeCenterViewport;
+    public Vector2 AimViewportPosition;
     public float BlueRadius;
     public float GreenRadius;
     public float YellowRadius;
@@ -233,6 +237,7 @@ public struct PlayerCombatHudState
     public Vector2 LastPointerViewportPosition;
     public string AttackModeLabel;
     public string ChargeZoneLabel;
+    public bool IsDragging;
     public bool ChargeInvalidated;
     public float ChargeRatio;
     public float ChargeMultiplier;

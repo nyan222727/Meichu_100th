@@ -56,7 +56,9 @@ public sealed class PlayerUltimate
 
     private void SpawnTarget(Vector2 centerViewportPosition, float radiusScale, PlayerUltimateConfig config, bool log)
     {
-        float angle = Random.Range(0f, Mathf.PI * 2f);
+        float minAngle = Mathf.Clamp(config.TargetFanMinAngle, 0f, 180f);
+        float maxAngle = Mathf.Clamp(Mathf.Max(config.TargetFanMaxAngle, minAngle), 0f, 180f);
+        float angle = Random.Range(minAngle, maxAngle) * Mathf.Deg2Rad;
         float radius = Random.Range(config.OuterMinRadius, config.OuterMaxRadius) * radiusScale;
         Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
         Vector2 targetScreenPosition = ViewportToScreenPoint(centerViewportPosition) + (direction * radius);
@@ -149,6 +151,8 @@ public struct PlayerUltimateConfig
     public float TargetRadius;
     public float OuterMinRadius;
     public float OuterMaxRadius;
+    public float TargetFanMinAngle;
+    public float TargetFanMaxAngle;
     public float SpawnDistanceFromCamera;
     public int FoxDamage;
 }
