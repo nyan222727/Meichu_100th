@@ -929,7 +929,6 @@ MonoBehaviour:
   rangedZoneColor: {r: 1, g: 0.36, b: 0.38, a: 0.36}
   blueZoneColor: {r: 0.46, g: 0.91, b: 1, a: 0.58}
   chargeFillColor: {r: 0.1, g: 0.55, b: 1, a: 0.22}
-  outerArcColor: {r: 0, g: 0, b: 0, a: 0.82}
   meleeFlashColor: {r: 1, g: 0.96, b: 0.3, a: 1}
   rangedFlashColor: {r: 1, g: 0.25, b: 0.35, a: 1}
   ultimateColor: {r: 0.7, g: 0.68, b: 1, a: 0.95}

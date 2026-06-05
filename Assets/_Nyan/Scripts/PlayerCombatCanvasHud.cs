@@ -28,7 +28,6 @@ public class PlayerCombatCanvasHud : MonoBehaviour
     [SerializeField] private Color rangedZoneColor = new Color(1f, 0.36f, 0.38f, 0.36f);
     [SerializeField] private Color blueZoneColor = new Color(0.46f, 0.91f, 1f, 0.58f);
     [SerializeField] private Color chargeFillColor = new Color(0.1f, 0.55f, 1f, 0.22f);
-    [SerializeField] private Color outerArcColor = new Color(0f, 0f, 0f, 0.82f);
     [SerializeField] private Color meleeFlashColor = new Color(1f, 0.96f, 0.3f, 1f);
     [SerializeField] private Color rangedFlashColor = new Color(1f, 0.25f, 0.35f, 1f);
     [SerializeField] private Color ultimateColor = new Color(0.7f, 0.68f, 1f, 0.95f);
@@ -41,7 +40,6 @@ public class PlayerCombatCanvasHud : MonoBehaviour
     private Image rangedZone;
     private Image blueZone;
     private Image chargeFill;
-    private Image outerArc;
     private Image meleeIcon;
     private Image rangedIcon;
     private Image ultimateTarget;
@@ -49,8 +47,8 @@ public class PlayerCombatCanvasHud : MonoBehaviour
     private Image releaseFlash;
 
     private Sprite circleSprite;
-    private Sprite leftHalfCircleSprite;
-    private Sprite rightHalfCircleSprite;
+    private Sprite leftHalfRingSprite;
+    private Sprite rightHalfRingSprite;
     private Sprite ringSprite;
     private Sprite triangleSprite;
     private Sprite starSprite;
@@ -123,11 +121,10 @@ public class PlayerCombatCanvasHud : MonoBehaviour
             return;
         }
 
-        meleeZone = CreateImage("Melee Zone", root, leftHalfCircleSprite, meleeZoneColor);
-        rangedZone = CreateImage("Ranged Zone", root, rightHalfCircleSprite, rangedZoneColor);
-        blueZone = CreateImage("Charge Start Zone", root, ringSprite, blueZoneColor);
+        meleeZone = CreateImage("Melee Zone", root, leftHalfRingSprite, meleeZoneColor);
+        rangedZone = CreateImage("Ranged Zone", root, rightHalfRingSprite, rangedZoneColor);
         chargeFill = CreateImage("Charge Fill", root, circleSprite, Color.clear);
-        outerArc = CreateImage("Outer Release Arc", root, ringSprite, outerArcColor);
+        blueZone = CreateImage("Charge Start Zone", root, ringSprite, blueZoneColor);
 
         meleeIcon = CreateImage("Melee Icon", root, meleeIconSprite != null ? meleeIconSprite : daggerSprite, iconColor);
         rangedIcon = CreateImage("Ranged Icon", root, rangedIconSprite != null ? rangedIconSprite : bowSprite, iconColor);
@@ -196,7 +193,6 @@ public class PlayerCombatCanvasHud : MonoBehaviour
 
         SetViewportRect(meleeZone.rectTransform, settings.ChargeCenterViewport, new Vector2(outerSize, outerSize), rootSize);
         SetViewportRect(rangedZone.rectTransform, settings.ChargeCenterViewport, new Vector2(outerSize, outerSize), rootSize);
-        SetViewportRect(outerArc.rectTransform, settings.ChargeCenterViewport, new Vector2(outerSize, outerSize), rootSize);
         SetViewportRect(blueZone.rectTransform, settings.ChargeCenterViewport, new Vector2(blueSize, blueSize), rootSize);
         blueZone.enabled = true;
 
@@ -305,8 +301,8 @@ public class PlayerCombatCanvasHud : MonoBehaviour
     private void EnsureSprites()
     {
         circleSprite ??= CreateCircleSprite(CircleSpriteMode.Full);
-        leftHalfCircleSprite ??= CreateCircleSprite(CircleSpriteMode.LeftHalf);
-        rightHalfCircleSprite ??= CreateCircleSprite(CircleSpriteMode.RightHalf);
+        leftHalfRingSprite ??= CreateCircleSprite(CircleSpriteMode.LeftHalfRing);
+        rightHalfRingSprite ??= CreateCircleSprite(CircleSpriteMode.RightHalfRing);
         ringSprite ??= CreateCircleSprite(CircleSpriteMode.Ring);
         triangleSprite ??= CreateTriangleSprite();
         starSprite ??= CreateStarSprite();
@@ -331,17 +327,17 @@ public class PlayerCombatCanvasHud : MonoBehaviour
                 float distance = Mathf.Sqrt((dx * dx) + (dy * dy));
                 bool visible = distance <= radius;
 
-                if (mode == CircleSpriteMode.LeftHalf)
-                {
-                    visible &= x <= center;
-                }
-                else if (mode == CircleSpriteMode.RightHalf)
-                {
-                    visible &= x >= center;
-                }
-                else if (mode == CircleSpriteMode.Ring)
+                if (mode == CircleSpriteMode.Ring)
                 {
                     visible = distance <= radius && distance >= radius * 0.94f;
+                }
+                else if (mode == CircleSpriteMode.LeftHalfRing)
+                {
+                    visible &= x <= center && distance >= radius * 0.4f;
+                }
+                else if (mode == CircleSpriteMode.RightHalfRing)
+                {
+                    visible &= x >= center && distance >= radius * 0.4f;
                 }
 
                 byte alpha = visible ? (byte)255 : (byte)0;
@@ -515,8 +511,8 @@ public class PlayerCombatCanvasHud : MonoBehaviour
     private enum CircleSpriteMode
     {
         Full,
-        LeftHalf,
-        RightHalf,
+        LeftHalfRing,
+        RightHalfRing,
         Ring
     }
 }
