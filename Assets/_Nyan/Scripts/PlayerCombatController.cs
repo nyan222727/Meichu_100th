@@ -129,7 +129,10 @@ public class PlayerCombatController : MonoBehaviour
         EnsureProjectileAttack();
         EnsureMeleeAttack();
         EnsureCanvasHud();
-        canvasHud.SetVisible(true);
+        if (canvasHud != null)
+        {
+            canvasHud.SetVisible(true);
+        }
         activeChargeCenterViewport = chargeCenterViewport;
         ResetInputState();
         ultimate.ScheduleNextTarget(GetUltimateConfig());
@@ -337,25 +340,26 @@ public class PlayerCombatController : MonoBehaviour
     {
         if (canvasHud == null)
         {
-            canvasHud = GetComponent<PlayerCombatCanvasHud>();
-        }
-
-        if (canvasHud == null)
-        {
-            canvasHud = gameObject.AddComponent<PlayerCombatCanvasHud>();
+            canvasHud = GetComponentInChildren<PlayerCombatCanvasHud>(true);
         }
     }
 
     private void UpdateCanvasHud()
     {
         EnsureCanvasHud();
-        canvasHud.Apply(GetHudSettings(), GetHudState());
+        if (canvasHud != null)
+        {
+            canvasHud.Apply(GetHudSettings(), GetHudState());
+        }
     }
 
     private void ShowReleaseFeedback(Vector2 viewportPosition, AttackStrength strength, bool isRanged)
     {
         EnsureCanvasHud();
-        canvasHud.ShowReleaseFeedback(viewportPosition, strength, isRanged);
+        if (canvasHud != null)
+        {
+            canvasHud.ShowReleaseFeedback(viewportPosition, strength, isRanged);
+        }
     }
 
     private void EnsureMeleeAttack()
