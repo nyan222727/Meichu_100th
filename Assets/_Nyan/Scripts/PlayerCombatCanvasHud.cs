@@ -125,10 +125,12 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
         Vector2 start = ViewportToCanvasPoint(settings.ChargeCenterViewport, rootSize);
         Vector2 end = ViewportToCanvasPoint(state.LastPointerViewportPosition, rootSize);
         Vector2 delta = end - start;
-        float displacement = delta.magnitude / Mathf.Max(1f, Mathf.Min(rootSize.x, rootSize.y));
+        float radiusScale = Mathf.Max(1f, Mathf.Min(rootSize.x, rootSize.y));
+        float triggerDistance = settings.MinimumAttackDisplacement * radiusScale;
+        float arrowLength = delta.magnitude - triggerDistance;
 
         powerArrow.gameObject.SetActive(
-            displacement >= settings.MinimumAttackDisplacement
+            arrowLength > 0.01f
             && delta.sqrMagnitude > 0.01f);
         if (!powerArrow.gameObject.activeSelf)
         {
@@ -136,12 +138,12 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
         }
 
         Vector2 direction = delta.normalized;
-        powerArrowPivot.anchoredPosition = Vector2.zero;
+        powerArrowPivot.anchoredPosition = direction * triggerDistance;
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
         powerArrowPivot.localEulerAngles = new Vector3(0f, 0f, angle - powerArrowSpriteForwardAngle);
 
         RectTransform arrowRect = powerArrow.rectTransform;
-        arrowRect.sizeDelta = new Vector2(delta.magnitude, arrowRect.sizeDelta.y);
+        arrowRect.sizeDelta = new Vector2(arrowLength, arrowRect.sizeDelta.y);
 
         Color color = powerArrowBaseColor;
         color.a *= Mathf.Lerp(0.18f, 1f, Mathf.Clamp01(state.DisplacementRatio));

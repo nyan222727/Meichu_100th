@@ -54,6 +54,24 @@ public sealed class PlayerUltimate
         return true;
     }
 
+    public bool TryTriggerSegment(Vector2 startViewportPosition, Vector2 endViewportPosition, bool chargeInvalidated, Camera sourceCamera, PlayerUltimateConfig config, float radiusScale, bool log)
+    {
+        if (!hasTarget || chargeInvalidated)
+        {
+            return false;
+        }
+
+        if (GetTargetSegmentDistance(startViewportPosition, endViewportPosition, radiusScale) > config.TargetRadius)
+        {
+            return false;
+        }
+
+        SummonFox(sourceCamera, config, log);
+        hasTarget = false;
+        ScheduleNextTarget(config);
+        return true;
+    }
+
     private void SpawnTarget(Vector2 centerViewportPosition, float radiusScale, PlayerUltimateConfig config, bool log)
     {
         float minAngle = Mathf.Clamp(config.TargetFanMinAngle, 0f, 180f);
@@ -78,6 +96,23 @@ public sealed class PlayerUltimate
         Vector2 screenPosition = ViewportToScreenPoint(viewportPosition);
         Vector2 targetPosition = ViewportToScreenPoint(targetViewportPosition);
         return Vector2.Distance(screenPosition, targetPosition) / Mathf.Max(1f, radiusScale);
+    }
+
+    private float GetTargetSegmentDistance(Vector2 startViewportPosition, Vector2 endViewportPosition, float radiusScale)
+    {
+        Vector2 startScreenPosition = ViewportToScreenPoint(startViewportPosition);
+        Vector2 endScreenPosition = ViewportToScreenPoint(endViewportPosition);
+        Vector2 targetScreenPosition = ViewportToScreenPoint(targetViewportPosition);
+        Vector2 segment = endScreenPosition - startScreenPosition;
+
+        if (segment.sqrMagnitude <= 0.01f)
+        {
+            return Vector2.Distance(startScreenPosition, targetScreenPosition) / Mathf.Max(1f, radiusScale);
+        }
+
+        float t = Vector2.Dot(targetScreenPosition - startScreenPosition, segment) / segment.sqrMagnitude;
+        Vector2 closestPoint = startScreenPosition + (Mathf.Clamp01(t) * segment);
+        return Vector2.Distance(closestPoint, targetScreenPosition) / Mathf.Max(1f, radiusScale);
     }
 
     private void SummonFox(Camera sourceCamera, PlayerUltimateConfig config, bool log)

@@ -76,9 +76,9 @@ public sealed class PlayerCombatHud
 
         Vector2 center = ViewportToGuiPoint(settings.ChargeCenterViewport);
         DrawDistanceGuide(settings, center, settings.MinimumAttackDisplacement, new Color(0.75f, 0.75f, 0.75f, 0.55f));
-        DrawDistanceGuide(settings, center, settings.MediumAttackDisplacement, new Color(0.25f, 0.95f, 0.25f, 0.65f));
-        DrawDistanceGuide(settings, center, settings.StrongAttackDisplacement, new Color(1f, 0.78f, 0.15f, 0.72f));
-        DrawDistanceGuide(settings, center, settings.MaxAttackDisplacement, new Color(1f, 0.12f, 0.08f, 0.8f));
+        DrawDistanceGuide(settings, center, settings.MinimumAttackDisplacement + settings.MediumAttackDisplacement, new Color(0.25f, 0.95f, 0.25f, 0.65f));
+        DrawDistanceGuide(settings, center, settings.MinimumAttackDisplacement + settings.StrongAttackDisplacement, new Color(1f, 0.78f, 0.15f, 0.72f));
+        DrawDistanceGuide(settings, center, settings.MinimumAttackDisplacement + settings.MaxAttackDisplacement, new Color(1f, 0.12f, 0.08f, 0.8f));
     }
 
     private void DrawDistanceGuide(PlayerCombatHudSettings settings, Vector2 center, float normalizedDistance, Color color)

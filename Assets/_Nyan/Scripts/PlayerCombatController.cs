@@ -33,17 +33,18 @@ public class PlayerCombatController : MonoBehaviour
     [SerializeField] private float maxChargeMultiplier = 3f;
 
     [Header("Attack Displacement")]
-    [Tooltip("Normalized by the shorter screen side. Below this distance, release does not attack.")]
+    [InspectorName("Attack Trigger Radius")]
+    [Tooltip("Normalized by the shorter screen side. The player must drag outside this visible control circle before attacks and power arrows can trigger.")]
     [FormerlySerializedAs("minimumAttackDragDistance")]
-    [SerializeField, Range(0f, 1f)] private float minimumAttackDisplacement = 0.025f;
-    [Tooltip("Normalized by the shorter screen side. Drag at least this far for medium damage.")]
+    [SerializeField, Range(0.01f, 0.5f)] private float minimumAttackDisplacement = 0.13f;
+    [Tooltip("Extra distance after leaving the trigger circle. Drag at least this far for medium damage.")]
     [FormerlySerializedAs("mediumAttackDragDistance")]
     [SerializeField, Range(0f, 1f)] private float mediumAttackDisplacement = 0.16f;
-    [Tooltip("Normalized by the shorter screen side. Drag at least this far for strong damage.")]
+    [Tooltip("Extra distance after leaving the trigger circle. Drag at least this far for strong damage.")]
     [FormerlySerializedAs("strongAttackDragDistance")]
     [SerializeField, Range(0f, 1f)] private float strongAttackDisplacement = 0.3f;
     [FormerlySerializedAs("chargeDistanceForMax")]
-    [Tooltip("Normalized by the shorter screen side. Used to clamp arrow brightness and displacement debug values.")]
+    [Tooltip("Extra distance after leaving the trigger circle. Used to clamp arrow brightness and displacement debug values.")]
     [SerializeField, Range(0.01f, 1f)] private float attackDisplacementForMax = 0.38f;
 
     [Header("Melee")]
@@ -106,8 +107,8 @@ public class PlayerCombatController : MonoBehaviour
         yellowRadius = Mathf.Max(yellowRadius, greenRadius);
         redRadius = Mathf.Max(redRadius, yellowRadius);
         gestureChargeTravelForMax = Mathf.Max(0.01f, gestureChargeTravelForMax);
-        minimumAttackDisplacement = Mathf.Clamp01(minimumAttackDisplacement);
-        mediumAttackDisplacement = Mathf.Clamp01(Mathf.Max(minimumAttackDisplacement, mediumAttackDisplacement));
+        minimumAttackDisplacement = Mathf.Clamp(minimumAttackDisplacement, 0.01f, 0.5f);
+        mediumAttackDisplacement = Mathf.Clamp01(mediumAttackDisplacement);
         strongAttackDisplacement = Mathf.Clamp01(Mathf.Max(mediumAttackDisplacement, strongAttackDisplacement));
         attackDisplacementForMax = Mathf.Clamp(Mathf.Max(strongAttackDisplacement, attackDisplacementForMax), 0.01f, 1f);
         minChargeMultiplier = Mathf.Max(0f, minChargeMultiplier);
@@ -182,6 +183,8 @@ public class PlayerCombatController : MonoBehaviour
         }
 
         Vector2 viewportPosition = ScreenToViewport(screenPosition);
+        Vector2 previousViewportPosition = lastPointerViewportPosition;
+        bool hadPreviousPointerPosition = hasPointerPosition;
         lastPointerViewportPosition = viewportPosition;
         hasPointerPosition = true;
 
@@ -198,6 +201,13 @@ public class PlayerCombatController : MonoBehaviour
                 gestureChargeTravelForMax,
                 minChargeMultiplier,
                 maxChargeMultiplier);
+
+            Vector2 triggerStart = hadPreviousPointerPosition ? previousViewportPosition : viewportPosition;
+            if (TryTriggerUltimate(triggerStart, viewportPosition))
+            {
+                ResetInputState();
+                return;
+            }
         }
 
         if (isDragging && pointerUp)
@@ -252,13 +262,13 @@ public class PlayerCombatController : MonoBehaviour
 
     private void ReleaseDrag(Vector2 viewportPosition)
     {
-        if (ultimate.TryTrigger(viewportPosition, false, mainCamera, GetUltimateConfig(), GetChargeRadiusScale(), logAttacks))
+        if (TryTriggerUltimate(viewportPosition, viewportPosition))
         {
             ResetInputState();
             return;
         }
 
-        float dragDistance = GetDragDistance(viewportPosition);
+        float dragDistance = GetAttackDisplacement(viewportPosition);
         float chargeMultiplier = charge.Multiplier;
 
         if (currentAttackMode == AttackMode.Ranged)
@@ -273,13 +283,25 @@ public class PlayerCombatController : MonoBehaviour
         ResetInputState();
     }
 
+    private bool TryTriggerUltimate(Vector2 startViewportPosition, Vector2 endViewportPosition)
+    {
+        return ultimate.TryTriggerSegment(
+            startViewportPosition,
+            endViewportPosition,
+            false,
+            mainCamera,
+            GetUltimateConfig(),
+            GetChargeRadiusScale(),
+            logAttacks);
+    }
+
     private void ReleaseRangedAttack(Vector2 viewportPosition, float dragDistance, float chargeMultiplier)
     {
         if (!TryGetAttackStrength(dragDistance, out AttackStrength strength))
         {
             if (logAttacks)
             {
-                Debug.Log($"[PlayerAttack] Ranged attack cancelled. Displacement {dragDistance:0.000} < {minimumAttackDisplacement:0.000}.");
+                Debug.Log($"[PlayerAttack] Ranged attack cancelled. Attack displacement {dragDistance:0.000} <= 0.000.");
             }
 
             return;
@@ -305,7 +327,7 @@ public class PlayerCombatController : MonoBehaviour
         {
             if (logAttacks)
             {
-                Debug.Log($"[PlayerAttack] Melee attack cancelled. Displacement {dragDistance:0.000} < {minimumAttackDisplacement:0.000}.");
+                Debug.Log($"[PlayerAttack] Melee attack cancelled. Attack displacement {dragDistance:0.000} <= 0.000.");
             }
 
             return;
@@ -402,7 +424,12 @@ public class PlayerCombatController : MonoBehaviour
 
     private float GetDisplacementRatio(Vector2 viewportPosition)
     {
-        return Mathf.Clamp01(GetDragDistance(viewportPosition) / Mathf.Max(0.01f, attackDisplacementForMax));
+        return Mathf.Clamp01(GetAttackDisplacement(viewportPosition) / Mathf.Max(0.01f, attackDisplacementForMax));
+    }
+
+    private float GetAttackDisplacement(Vector2 viewportPosition)
+    {
+        return Mathf.Max(0f, GetDragDistance(viewportPosition) - minimumAttackDisplacement);
     }
 
     private Vector2 GetCurrentChargeCenterViewport()
@@ -417,7 +444,7 @@ public class PlayerCombatController : MonoBehaviour
 
     private bool TryGetAttackStrength(float dragDistance, out AttackStrength strength)
     {
-        if (dragDistance < minimumAttackDisplacement)
+        if (dragDistance <= 0f)
         {
             strength = default;
             return false;
@@ -517,7 +544,7 @@ public class PlayerCombatController : MonoBehaviour
                 ? GetAttackMode(lastPointerViewportPosition)
                 : AttackMode.None;
         PlayerUltimateConfig ultimateConfig = GetUltimateConfig();
-        float dragDistance = isDragging && hasPointerPosition ? GetDragDistance(lastPointerViewportPosition) : 0f;
+        float dragDistance = isDragging && hasPointerPosition ? GetAttackDisplacement(lastPointerViewportPosition) : 0f;
         float displacementRatio = isDragging && hasPointerPosition ? GetDisplacementRatio(lastPointerViewportPosition) : 0f;
 
         return new PlayerCombatHudState
