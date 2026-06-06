@@ -1,9 +1,11 @@
 using UnityEngine;
 using UnityEngine.Serialization;
+using UnityEngine.XR.ARFoundation;
 
 public class PandaPlacement : MonoBehaviour
 {
     [SerializeField] private GameObject pandaPrefab;
+    [SerializeField] private GameObject gameplayFloorPrefab;
     [SerializeField] private ReticleBehaviour reticle;
     [SerializeField] private DrivingSurfaceManager drivingSurfaceManager;
     [FormerlySerializedAs("projectileLauncher")]
@@ -12,6 +14,7 @@ public class PandaPlacement : MonoBehaviour
     [SerializeField] private bool hideReticleAfterPlacement = true;
 
     private GameObject spawnedPanda;
+    private GameObject gameplayFloor;
 
     private void Update()
     {
@@ -25,12 +28,23 @@ public class PandaPlacement : MonoBehaviour
             return;
         }
 
+        ARPlane placementPlane = reticle.CurrentPlane;
+
         spawnedPanda = Instantiate(pandaPrefab, reticle.transform.position, reticle.transform.rotation);
         EnsureDamageable(spawnedPanda);
 
-        if (lockPlaneAfterPlacement && drivingSurfaceManager != null)
+        if (gameplayFloorPrefab != null)
         {
-            drivingSurfaceManager.LockPlane(reticle.CurrentPlane);
+            gameplayFloor = Instantiate(
+                gameplayFloorPrefab,
+                placementPlane.transform.position,
+                placementPlane.transform.rotation);
+
+            StopPlaneDetection();
+        }
+        else if (lockPlaneAfterPlacement && drivingSurfaceManager != null)
+        {
+            drivingSurfaceManager.LockPlane(placementPlane);
         }
 
         if (hideReticleAfterPlacement)
@@ -46,6 +60,31 @@ public class PandaPlacement : MonoBehaviour
         if (combatController != null)
         {
             combatController.enabled = true;
+        }
+    }
+
+    private void StopPlaneDetection()
+    {
+        if (drivingSurfaceManager == null)
+        {
+            return;
+        }
+
+        ARPlaneManager planeManager = drivingSurfaceManager.PlaneManager;
+        if (planeManager != null)
+        {
+            foreach (ARPlane detectedPlane in planeManager.trackables)
+            {
+                detectedPlane.gameObject.SetActive(false);
+            }
+
+            planeManager.enabled = false;
+        }
+
+        ARRaycastManager raycastManager = drivingSurfaceManager.RaycastManager;
+        if (raycastManager != null)
+        {
+            raycastManager.enabled = false;
         }
     }
 
