@@ -9,14 +9,8 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
     [SerializeField] private Image healthFill;
     [SerializeField] private RectTransform crosshair;
 
-    [Header("Drag Control References")]
-    [SerializeField] private RectTransform dragControl;
-    [SerializeField] private Image controlRingBase;
-    [SerializeField] private Image chargeArc;
-    [SerializeField] private Image meleeIcon;
-    [SerializeField] private Image rangedIcon;
-    [SerializeField] private RectTransform powerArrowPivot;
-    [SerializeField] private Image powerArrow;
+    [Header("Charge Control")]
+    [SerializeField] private PlayerChargeControlView chargeControl;
 
     [Header("Ultimate References")]
     [SerializeField] private RectTransform ultimateTarget;
@@ -28,14 +22,12 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
     [SerializeField] private Image releaseFlash;
 
     [Header("Runtime Behaviour")]
-    [SerializeField] private float powerArrowSpriteForwardAngle;
     [SerializeField] private float releaseFlashDuration = 0.26f;
 
     private float releaseFlashStartedAt = -999f;
     private float releaseFlashStrength;
     private Vector2 releaseFlashViewportPosition;
     private bool warnedMissingReferences;
-    private Color powerArrowBaseColor;
     private Color ultimateIconBaseColor;
     private Color releaseFlashBaseColor;
 
@@ -46,7 +38,6 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
             return;
         }
 
-        powerArrowBaseColor = powerArrow.color;
         ultimateIconBaseColor = ultimateTargetIcon.color;
         releaseFlashBaseColor = releaseFlash.color;
     }
@@ -75,7 +66,7 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
 
         UpdateHealth(state.PlayerHealthRatio);
         UpdateCrosshair(settings.AimViewportPosition);
-        UpdateDragControl(settings, state);
+        chargeControl.Apply(settings, state, GetRootSize());
         UpdateUltimateTarget(state);
         UpdateReleaseFlash(settings);
     }
@@ -99,55 +90,6 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
     private void UpdateCrosshair(Vector2 viewportPosition)
     {
         SetViewportPosition(crosshair, viewportPosition);
-    }
-
-    private void UpdateDragControl(PlayerCombatHudSettings settings, PlayerCombatHudState state)
-    {
-        dragControl.gameObject.SetActive(state.IsDragging);
-        if (!state.IsDragging)
-        {
-            return;
-        }
-
-        SetViewportPosition(dragControl, settings.ChargeCenterViewport);
-        chargeArc.fillAmount = Mathf.Clamp01(state.ChargeRatio);
-
-        bool melee = state.AttackModeLabel == "Melee";
-        meleeIcon.gameObject.SetActive(melee);
-        rangedIcon.gameObject.SetActive(!melee);
-
-        UpdatePowerArrow(settings, state);
-    }
-
-    private void UpdatePowerArrow(PlayerCombatHudSettings settings, PlayerCombatHudState state)
-    {
-        Vector2 rootSize = GetRootSize();
-        Vector2 start = ViewportToCanvasPoint(settings.ChargeCenterViewport, rootSize);
-        Vector2 end = ViewportToCanvasPoint(state.LastPointerViewportPosition, rootSize);
-        Vector2 delta = end - start;
-        float radiusScale = Mathf.Max(1f, Mathf.Min(rootSize.x, rootSize.y));
-        float triggerDistance = settings.MinimumAttackDisplacement * radiusScale;
-        float arrowLength = delta.magnitude - triggerDistance;
-
-        powerArrow.gameObject.SetActive(
-            arrowLength > 0.01f
-            && delta.sqrMagnitude > 0.01f);
-        if (!powerArrow.gameObject.activeSelf)
-        {
-            return;
-        }
-
-        Vector2 direction = delta.normalized;
-        powerArrowPivot.anchoredPosition = direction * triggerDistance;
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        powerArrowPivot.localEulerAngles = new Vector3(0f, 0f, angle - powerArrowSpriteForwardAngle);
-
-        RectTransform arrowRect = powerArrow.rectTransform;
-        arrowRect.sizeDelta = new Vector2(arrowLength, arrowRect.sizeDelta.y);
-
-        Color color = powerArrowBaseColor;
-        color.a *= Mathf.Lerp(0.18f, 1f, Mathf.Clamp01(state.DisplacementRatio));
-        powerArrow.color = color;
     }
 
     private void UpdateUltimateTarget(PlayerCombatHudState state)
@@ -190,13 +132,8 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
             && healthBackground != null
             && healthFill != null
             && crosshair != null
-            && dragControl != null
-            && controlRingBase != null
-            && chargeArc != null
-            && meleeIcon != null
-            && rangedIcon != null
-            && powerArrowPivot != null
-            && powerArrow != null
+            && chargeControl != null
+            && chargeControl.IsValid()
             && ultimateTarget != null
             && ultimateTargetBackground != null
             && ultimateTargetRing != null

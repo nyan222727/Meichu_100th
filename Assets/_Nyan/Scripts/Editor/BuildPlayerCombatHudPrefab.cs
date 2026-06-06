@@ -7,11 +7,25 @@ using UnityEngine.UI;
 public static class BuildPlayerCombatHudPrefab
 {
     private const string MenuPath = "Tools/Nyan/Rebuild Player Combat HUD Prefab";
+    private const string AssetOnlyMenuPath = "Tools/Nyan/Rebuild Player Combat HUD Prefab Asset Only";
+    private const string OpenChargeControlMenuPath = "Tools/Nyan/Open Player Charge Control Prefab";
     private const string PrefabFolder = "Assets/_Nyan/Prefabs/UI";
     private const string PrefabPath = PrefabFolder + "/PlayerCombatHUD.prefab";
+    private const string ChargeControlPrefabPath = PrefabFolder + "/PlayerChargeControl.prefab";
 
     [MenuItem(MenuPath)]
     public static void Build()
+    {
+        Build(installSceneInstance: true);
+    }
+
+    [MenuItem(AssetOnlyMenuPath)]
+    public static void BuildAssetOnly()
+    {
+        Build(installSceneInstance: false);
+    }
+
+    private static void Build(bool installSceneInstance)
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode)
         {
@@ -22,11 +36,13 @@ public static class BuildPlayerCombatHudPrefab
         EnsureFolder("Assets/_Nyan/Prefabs", "UI");
 
         Sprite ringSprite = LoadSprite("Assets/_Nyan/UI/Icons/MeleeBaseRing.png");
-        Sprite meleeSprite = LoadSprite("Assets/_Nyan/UI/Icons/MeleeKnifeIcon.png");
-        Sprite rangedSprite = LoadSprite("Assets/_Nyan/UI/Icons/BowIcon.png");
-        Sprite arrowSprite = LoadSprite("Assets/_Nyan/UI/Icons/PowerArrow.png");
         Sprite ultimateSprite = LoadSprite("Assets/_Nyan/UI/Icons/UltimateFoxIcon.png");
         Sprite circleSprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
+        GameObject chargeControlPrefab = GetOrCreateChargeControlPrefab();
+        if (chargeControlPrefab == null)
+        {
+            return;
+        }
 
         GameObject prefabSource = new GameObject(
             "PlayerCombatHUD",
@@ -53,38 +69,8 @@ public static class BuildPlayerCombatHudPrefab
         Image crosshairVertical = CreateImage("Vertical", crosshair, null, new Color(1f, 0.18f, 0.12f, 0.9f));
         SetCenter(crosshairVertical.rectTransform, Vector2.zero, new Vector2(2f, 35f));
 
-        RectTransform dragControl = CreateRect("Drag Control", content);
-        dragControl.anchorMin = Vector2.zero;
-        dragControl.anchorMax = Vector2.zero;
-        dragControl.pivot = new Vector2(0.5f, 0.5f);
-        dragControl.sizeDelta = new Vector2(100f, 100f);
-
-        Image controlRingBase = CreateImage("Charge Ring Background", dragControl, ringSprite, new Color(1f, 1f, 1f, 0.3f));
-        Stretch(controlRingBase.rectTransform);
-        Image chargeArc = CreateImage("Gesture Charge Progress", dragControl, ringSprite, new Color(14f / 255f, 237f / 255f, 19f / 255f, 0.9f));
-        Stretch(chargeArc.rectTransform);
-        chargeArc.type = Image.Type.Filled;
-        chargeArc.fillMethod = Image.FillMethod.Radial360;
-        chargeArc.fillOrigin = (int)Image.Origin360.Top;
-        chargeArc.fillClockwise = true;
-        chargeArc.fillAmount = 0f;
-
-        Image meleeIcon = CreateImage("Melee Icon", dragControl, meleeSprite, Color.white);
-        SetCenter(meleeIcon.rectTransform, Vector2.zero, new Vector2(35f, 35f));
-        meleeIcon.preserveAspect = true;
-        Image rangedIcon = CreateImage("Ranged Icon", dragControl, rangedSprite, Color.white);
-        SetCenter(rangedIcon.rectTransform, Vector2.zero, new Vector2(35f, 35f));
-        rangedIcon.preserveAspect = true;
-
-        RectTransform powerArrowPivot = CreateRect("Displacement Arrow Pivot", dragControl);
-        SetCenter(powerArrowPivot, Vector2.zero, Vector2.zero);
-        Image powerArrow = CreateImage("Displacement Arrow", powerArrowPivot, arrowSprite, Color.white);
-        powerArrow.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
-        powerArrow.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-        powerArrow.rectTransform.pivot = new Vector2(0f, 0.5f);
-        powerArrow.rectTransform.anchoredPosition = Vector2.zero;
-        powerArrow.rectTransform.sizeDelta = new Vector2(185.397f, 44.82f);
-        powerArrow.preserveAspect = false;
+        GameObject chargeControlObject = (GameObject)PrefabUtility.InstantiatePrefab(chargeControlPrefab, content);
+        PlayerChargeControlView chargeControl = chargeControlObject.GetComponent<PlayerChargeControlView>();
 
         RectTransform ultimateTarget = CreateRect("Ultimate Target", content);
         ultimateTarget.anchorMin = Vector2.zero;
@@ -105,7 +91,6 @@ public static class BuildPlayerCombatHudPrefab
         releaseFlash.rectTransform.pivot = new Vector2(0.5f, 0.5f);
         releaseFlash.rectTransform.sizeDelta = new Vector2(80f, 80f);
 
-        dragControl.gameObject.SetActive(false);
         ultimateTarget.gameObject.SetActive(false);
         releaseFlash.gameObject.SetActive(false);
         content.gameObject.SetActive(false);
@@ -117,13 +102,7 @@ public static class BuildPlayerCombatHudPrefab
             healthBackground,
             healthFill,
             crosshair,
-            dragControl,
-            controlRingBase,
-            chargeArc,
-            meleeIcon,
-            rangedIcon,
-            powerArrowPivot,
-            powerArrow,
+            chargeControl,
             ultimateTarget,
             ultimateBackground,
             ultimateRing,
@@ -139,10 +118,111 @@ public static class BuildPlayerCombatHudPrefab
             return;
         }
 
-        InstallSceneInstance(prefabAsset);
+        if (installSceneInstance)
+        {
+            InstallSceneInstance(prefabAsset);
+        }
+
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log($"[PlayerCombatHUD] Rebuilt prefab and installed scene instance: {PrefabPath}");
+        string result = installSceneInstance ? "and installed scene instance" : "asset only";
+        Debug.Log($"[PlayerCombatHUD] Rebuilt prefab ({result}): {PrefabPath}");
+    }
+
+    [MenuItem(OpenChargeControlMenuPath)]
+    public static void OpenChargeControlPrefab()
+    {
+        GameObject prefab = GetOrCreateChargeControlPrefab();
+        if (prefab != null)
+        {
+            AssetDatabase.OpenAsset(prefab);
+        }
+    }
+
+    private static GameObject GetOrCreateChargeControlPrefab()
+    {
+        GameObject existingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ChargeControlPrefabPath);
+        if (existingPrefab != null)
+        {
+            return existingPrefab;
+        }
+
+        Sprite ringSprite = LoadSprite("Assets/_Nyan/UI/Icons/MeleeBaseRing.png");
+        Sprite meleeSprite = LoadSprite("Assets/_Nyan/UI/Icons/MeleeKnifeIcon.png");
+        Sprite rangedSprite = LoadSprite("Assets/_Nyan/UI/Icons/BowIcon.png");
+        Sprite arrowSprite = LoadSprite("Assets/_Nyan/UI/Icons/PowerArrow.png");
+
+        GameObject prefabSource = new GameObject(
+            "PlayerChargeControl",
+            typeof(RectTransform),
+            typeof(PlayerChargeControlView));
+
+        RectTransform root = prefabSource.GetComponent<RectTransform>();
+        root.anchorMin = Vector2.zero;
+        root.anchorMax = Vector2.zero;
+        root.pivot = new Vector2(0.5f, 0.5f);
+        root.anchoredPosition = Vector2.zero;
+        root.sizeDelta = new Vector2(100f, 100f);
+
+        Image controlRingBase = CreateImage(
+            "Charge Ring Background",
+            root,
+            ringSprite,
+            new Color(1f, 1f, 1f, 0.3f));
+        Stretch(controlRingBase.rectTransform);
+
+        Image chargeArc = CreateImage(
+            "Gesture Charge Progress",
+            root,
+            ringSprite,
+            new Color(14f / 255f, 237f / 255f, 19f / 255f, 0.9f));
+        Stretch(chargeArc.rectTransform);
+        chargeArc.type = Image.Type.Filled;
+        chargeArc.fillMethod = Image.FillMethod.Radial360;
+        chargeArc.fillOrigin = (int)Image.Origin360.Top;
+        chargeArc.fillClockwise = true;
+        chargeArc.fillAmount = 0.65f;
+
+        Image meleeIcon = CreateImage("Melee Icon", root, meleeSprite, Color.white);
+        SetCenter(meleeIcon.rectTransform, Vector2.zero, new Vector2(35f, 35f));
+        meleeIcon.preserveAspect = true;
+
+        Image rangedIcon = CreateImage("Ranged Icon", root, rangedSprite, Color.white);
+        SetCenter(rangedIcon.rectTransform, Vector2.zero, new Vector2(35f, 35f));
+        rangedIcon.preserveAspect = true;
+        rangedIcon.gameObject.SetActive(false);
+
+        RectTransform powerArrowPivot = CreateRect("Displacement Arrow Pivot", root);
+        SetCenter(powerArrowPivot, Vector2.zero, Vector2.zero);
+        Image powerArrow = CreateImage("Displacement Arrow", powerArrowPivot, arrowSprite, Color.white);
+        powerArrow.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        powerArrow.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        powerArrow.rectTransform.pivot = new Vector2(0f, 0.5f);
+        powerArrow.rectTransform.anchoredPosition = new Vector2(52f, 0f);
+        powerArrow.rectTransform.sizeDelta = new Vector2(133f, 44.82f);
+        powerArrow.preserveAspect = false;
+
+        PlayerChargeControlView view = prefabSource.GetComponent<PlayerChargeControlView>();
+        SerializedObject serializedView = new SerializedObject(view);
+        SetReference(serializedView, "chargeArc", chargeArc);
+        SetReference(serializedView, "meleeIcon", meleeIcon);
+        SetReference(serializedView, "rangedIcon", rangedIcon);
+        SetReference(serializedView, "powerArrowPivot", powerArrowPivot);
+        SetReference(serializedView, "powerArrow", powerArrow);
+        serializedView.ApplyModifiedPropertiesWithoutUndo();
+
+        GameObject prefabAsset = PrefabUtility.SaveAsPrefabAsset(prefabSource, ChargeControlPrefabPath);
+        Object.DestroyImmediate(prefabSource);
+
+        if (prefabAsset == null)
+        {
+            Debug.LogError("[PlayerChargeControl] Failed to create prefab.");
+            return null;
+        }
+
+        AssetDatabase.SaveAssets();
+        Debug.Log($"[PlayerChargeControl] Created editable prefab: {ChargeControlPrefabPath}");
+        return prefabAsset;
     }
 
     private static void InstallSceneInstance(GameObject prefabAsset)
@@ -216,13 +296,7 @@ public static class BuildPlayerCombatHudPrefab
         Image healthBackground,
         Image healthFill,
         RectTransform crosshair,
-        RectTransform dragControl,
-        Image controlRingBase,
-        Image chargeArc,
-        Image meleeIcon,
-        Image rangedIcon,
-        RectTransform powerArrowPivot,
-        Image powerArrow,
+        PlayerChargeControlView chargeControl,
         RectTransform ultimateTarget,
         Image ultimateBackground,
         Image ultimateRing,
@@ -234,13 +308,7 @@ public static class BuildPlayerCombatHudPrefab
         SetReference(serializedHud, "healthBackground", healthBackground);
         SetReference(serializedHud, "healthFill", healthFill);
         SetReference(serializedHud, "crosshair", crosshair);
-        SetReference(serializedHud, "dragControl", dragControl);
-        SetReference(serializedHud, "controlRingBase", controlRingBase);
-        SetReference(serializedHud, "chargeArc", chargeArc);
-        SetReference(serializedHud, "meleeIcon", meleeIcon);
-        SetReference(serializedHud, "rangedIcon", rangedIcon);
-        SetReference(serializedHud, "powerArrowPivot", powerArrowPivot);
-        SetReference(serializedHud, "powerArrow", powerArrow);
+        SetReference(serializedHud, "chargeControl", chargeControl);
         SetReference(serializedHud, "ultimateTarget", ultimateTarget);
         SetReference(serializedHud, "ultimateTargetBackground", ultimateBackground);
         SetReference(serializedHud, "ultimateTargetRing", ultimateRing);
