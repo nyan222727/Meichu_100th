@@ -741,10 +741,13 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
     {
         if (isDead) return;
 
+        int previousHealth = currentHealth;
         currentHealth -= damage;
         currentHealth = Mathf.Max(currentHealth, 0);
+        int actualDamage = previousHealth - currentHealth;
 
-        Debug.Log("Panda Boss takes " + damage + " damage. Current HP: " + currentHealth);
+        DamageFeedbackUtility.ShowDamage(this, actualDamage);
+        Debug.Log("Panda Boss takes " + actualDamage + " damage. Current HP: " + currentHealth);
 
         if (currentHealth <= 0)
         {

@@ -6,8 +6,11 @@ public class PlayerHealth : MonoBehaviour, IPlayerDamageReceiver, IPlayerStatus
     [SerializeField] private int maxHealth = 100;
     [SerializeField] private int currentHealth = 100;
     [SerializeField] private bool isBlocking;
+    [SerializeField] private bool vibrateOnDamage = true;
+    [SerializeField, Min(1)] private int minDamageForVibration = 1;
 
     public event Action<int, int> HealthChanged;
+    public event Action<int> Damaged;
 
     public Transform PlayerTransform => transform;
     public int MaxHealth => maxHealth;
@@ -49,7 +52,21 @@ public class PlayerHealth : MonoBehaviour, IPlayerDamageReceiver, IPlayerStatus
             return;
         }
 
+        int previousHealth = currentHealth;
         SetCurrentHealth(Mathf.Max(0, currentHealth - amount));
+        int actualDamage = previousHealth - currentHealth;
+
+        if (actualDamage <= 0)
+        {
+            return;
+        }
+
+        Damaged?.Invoke(actualDamage);
+
+        if (vibrateOnDamage && actualDamage >= minDamageForVibration)
+        {
+            TriggerDamageVibration();
+        }
     }
 
     public void Heal(int amount)
@@ -77,5 +94,12 @@ public class PlayerHealth : MonoBehaviour, IPlayerDamageReceiver, IPlayerStatus
 
         currentHealth = clampedValue;
         HealthChanged?.Invoke(currentHealth, maxHealth);
+    }
+
+    private static void TriggerDamageVibration()
+    {
+#if UNITY_ANDROID || UNITY_IOS
+        Handheld.Vibrate();
+#endif
     }
 }

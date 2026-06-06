@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
 
 public class PlayerCombatController : MonoBehaviour
@@ -170,6 +171,17 @@ public class PlayerCombatController : MonoBehaviour
             }
         }
 
+        if (Time.timeScale <= 0f)
+        {
+            if (isDragging)
+            {
+                ResetInputState();
+            }
+
+            UpdateCanvasHud();
+            return;
+        }
+
         ultimate.UpdateTarget(chargeCenterViewport, GetChargeRadiusScale(), GetUltimateConfig(), logAttacks);
         HandlePointerInput();
         UpdateCanvasHud();
@@ -236,6 +248,14 @@ public class PlayerCombatController : MonoBehaviour
         if (Input.touchCount > 0)
         {
             Touch touch = Input.GetTouch(0);
+            if (!isDragging
+                && touch.phase == TouchPhase.Began
+                && EventSystem.current != null
+                && EventSystem.current.IsPointerOverGameObject(touch.fingerId))
+            {
+                return false;
+            }
+
             screenPosition = touch.position;
             pointerDown = touch.phase == TouchPhase.Began;
             pointerHeld = touch.phase == TouchPhase.Moved || touch.phase == TouchPhase.Stationary;
@@ -246,6 +266,14 @@ public class PlayerCombatController : MonoBehaviour
         pointerDown = Input.GetMouseButtonDown(0);
         pointerHeld = Input.GetMouseButton(0);
         pointerUp = Input.GetMouseButtonUp(0);
+
+        if (!isDragging
+            && pointerDown
+            && EventSystem.current != null
+            && EventSystem.current.IsPointerOverGameObject())
+        {
+            return false;
+        }
 
         if (!pointerDown && !pointerHeld && !pointerUp)
         {

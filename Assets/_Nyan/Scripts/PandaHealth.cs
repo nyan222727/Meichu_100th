@@ -25,8 +25,11 @@ public class PandaHealth : MonoBehaviour, IDamageable
             return;
         }
 
+        int previousHealth = currentHealth;
         currentHealth = Mathf.Max(0, currentHealth - amount);
-        Debug.Log($"[PandaHealth] {name} took {amount} damage. HP={currentHealth}/{maxHealth}");
+        int actualDamage = previousHealth - currentHealth;
+        DamageFeedbackUtility.ShowDamage(this, actualDamage);
+        Debug.Log($"[PandaHealth] {name} took {actualDamage} damage. HP={currentHealth}/{maxHealth}");
 
         if (IsDefeated)
         {

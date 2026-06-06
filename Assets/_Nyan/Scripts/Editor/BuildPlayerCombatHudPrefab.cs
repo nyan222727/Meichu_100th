@@ -2,6 +2,7 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public static class BuildPlayerCombatHudPrefab
@@ -50,9 +51,16 @@ public static class BuildPlayerCombatHudPrefab
             typeof(Canvas),
             typeof(CanvasScaler),
             typeof(GraphicRaycaster),
-            typeof(PlayerCombatCanvasHud));
+            typeof(PlayerCombatCanvasHud),
+            typeof(GameplayPauseMenuController));
 
         ConfigureCanvas(prefabSource);
+
+        GameObject eventSystem = new GameObject(
+            "EventSystem",
+            typeof(EventSystem),
+            typeof(StandaloneInputModule));
+        eventSystem.transform.SetParent(prefabSource.transform, false);
 
         RectTransform content = CreateRect("Content", prefabSource.transform);
         Stretch(content);
@@ -91,8 +99,37 @@ public static class BuildPlayerCombatHudPrefab
         releaseFlash.rectTransform.pivot = new Vector2(0.5f, 0.5f);
         releaseFlash.rectTransform.sizeDelta = new Vector2(80f, 80f);
 
+        Button pauseButton = CreateButton(
+            "PauseButton",
+            content,
+            "Menu",
+            new Color(0f, 0f, 0f, 0.55f),
+            new Color(1f, 1f, 1f, 0.96f));
+        SetTopRight(pauseButton.GetComponent<RectTransform>(), new Vector2(-58f, -42f), new Vector2(72f, 38f));
+
+        Image pausePanelImage = CreateImage("PausePanel", content, null, new Color(0f, 0f, 0f, 0.68f));
+        RectTransform pausePanel = pausePanelImage.rectTransform;
+        SetTopRight(pausePanel, new Vector2(-112f, -106f), new Vector2(176f, 126f));
+
+        Button restartButton = CreateButton(
+            "RestartButton",
+            pausePanel,
+            "Restart",
+            new Color(0.12f, 0.12f, 0.12f, 0.92f),
+            Color.white);
+        SetTopCenter(restartButton.GetComponent<RectTransform>(), new Vector2(0f, -18f), new Vector2(138f, 38f));
+
+        Button backToMenuButton = CreateButton(
+            "BackToMenuButton",
+            pausePanel,
+            "Menu",
+            new Color(0.12f, 0.12f, 0.12f, 0.92f),
+            Color.white);
+        SetTopCenter(backToMenuButton.GetComponent<RectTransform>(), new Vector2(0f, -70f), new Vector2(138f, 38f));
+
         ultimateTarget.gameObject.SetActive(false);
         releaseFlash.gameObject.SetActive(false);
+        pausePanel.gameObject.SetActive(false);
         content.gameObject.SetActive(false);
 
         PlayerCombatCanvasHud hud = prefabSource.GetComponent<PlayerCombatCanvasHud>();
@@ -108,6 +145,14 @@ public static class BuildPlayerCombatHudPrefab
             ultimateRing,
             ultimateIcon,
             releaseFlash);
+
+        GameplayPauseMenuController pauseController = prefabSource.GetComponent<GameplayPauseMenuController>();
+        AssignPauseReferences(
+            pauseController,
+            pauseButton,
+            pausePanel.gameObject,
+            restartButton,
+            backToMenuButton);
 
         GameObject prefabAsset = PrefabUtility.SaveAsPrefabAsset(prefabSource, PrefabPath);
         Object.DestroyImmediate(prefabSource);
@@ -287,7 +332,7 @@ public static class BuildPlayerCombatHudPrefab
         scaler.matchWidthOrHeight = 1f;
 
         GraphicRaycaster raycaster = canvasObject.GetComponent<GraphicRaycaster>();
-        raycaster.enabled = false;
+        raycaster.enabled = true;
     }
 
     private static void AssignReferences(
@@ -317,6 +362,21 @@ public static class BuildPlayerCombatHudPrefab
         serializedHud.ApplyModifiedPropertiesWithoutUndo();
     }
 
+    private static void AssignPauseReferences(
+        GameplayPauseMenuController pauseController,
+        Button pauseButton,
+        GameObject pausePanel,
+        Button restartButton,
+        Button backToMenuButton)
+    {
+        SerializedObject serializedPause = new SerializedObject(pauseController);
+        SetReference(serializedPause, "pauseButton", pauseButton);
+        SetReference(serializedPause, "pausePanel", pausePanel);
+        SetReference(serializedPause, "restartButton", restartButton);
+        SetReference(serializedPause, "backToMenuButton", backToMenuButton);
+        serializedPause.ApplyModifiedPropertiesWithoutUndo();
+    }
+
     private static void SetReference(SerializedObject serializedObject, string propertyName, Object value)
     {
         SerializedProperty property = serializedObject.FindProperty(propertyName);
@@ -338,6 +398,46 @@ public static class BuildPlayerCombatHudPrefab
         image.color = color;
         image.raycastTarget = false;
         return image;
+    }
+
+    private static Button CreateButton(
+        string name,
+        Transform parent,
+        string label,
+        Color backgroundColor,
+        Color textColor)
+    {
+        GameObject buttonObject = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
+        buttonObject.transform.SetParent(parent, false);
+
+        Image image = buttonObject.GetComponent<Image>();
+        image.color = backgroundColor;
+        image.raycastTarget = true;
+
+        Button button = buttonObject.GetComponent<Button>();
+        button.targetGraphic = image;
+
+        Text text = CreateText("Label", buttonObject.transform, label, textColor, 20);
+        Stretch(text.rectTransform);
+        text.alignment = TextAnchor.MiddleCenter;
+
+        return button;
+    }
+
+    private static Text CreateText(string name, Transform parent, string textValue, Color color, int fontSize)
+    {
+        GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+        textObject.transform.SetParent(parent, false);
+
+        Text text = textObject.GetComponent<Text>();
+        text.text = textValue;
+        text.color = color;
+        text.fontSize = fontSize;
+        text.fontStyle = FontStyle.Bold;
+        text.alignment = TextAnchor.MiddleCenter;
+        text.raycastTarget = false;
+        text.font = GetBuiltinFont();
+        return text;
     }
 
     private static RectTransform CreateRect(string name, Transform parent)
@@ -373,6 +473,15 @@ public static class BuildPlayerCombatHudPrefab
         rectTransform.sizeDelta = size;
     }
 
+    private static void SetTopRight(RectTransform rectTransform, Vector2 position, Vector2 size)
+    {
+        rectTransform.anchorMin = new Vector2(1f, 1f);
+        rectTransform.anchorMax = new Vector2(1f, 1f);
+        rectTransform.pivot = new Vector2(1f, 1f);
+        rectTransform.anchoredPosition = position;
+        rectTransform.sizeDelta = size;
+    }
+
     private static Sprite LoadSprite(string assetPath)
     {
         Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
@@ -382,6 +491,17 @@ public static class BuildPlayerCombatHudPrefab
         }
 
         return sprite;
+    }
+
+    private static Font GetBuiltinFont()
+    {
+        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        if (font == null)
+        {
+            font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        }
+
+        return font;
     }
 
     private static void EnsureFolder(string parentFolder, string folderName)

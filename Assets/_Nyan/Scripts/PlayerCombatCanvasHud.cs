@@ -21,6 +21,12 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
     [Header("Feedback References")]
     [SerializeField] private Image releaseFlash;
 
+    [Header("Health Bar")]
+    [SerializeField] private Color healthyHealthColor = new Color(0.08f, 0.95f, 0.18f, 0.92f);
+    [SerializeField] private Color warningHealthColor = new Color(1f, 0.78f, 0.22f, 0.94f);
+    [SerializeField] private Color criticalHealthColor = new Color(1f, 0.16f, 0.12f, 0.96f);
+    [SerializeField] private Color healthBackgroundColor = new Color(0f, 0f, 0f, 0.58f);
+
     [Header("Runtime Behaviour")]
     [SerializeField] private float releaseFlashDuration = 0.26f;
 
@@ -80,11 +86,30 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
 
     private void UpdateHealth(float healthRatio)
     {
+        healthRatio = Mathf.Clamp01(healthRatio);
+        healthBackground.color = healthBackgroundColor;
+        healthFill.color = GetHealthColor(healthRatio);
+
         RectTransform fillRect = healthFill.rectTransform;
         fillRect.anchorMin = Vector2.zero;
-        fillRect.anchorMax = new Vector2(Mathf.Clamp01(healthRatio), 1f);
+        fillRect.anchorMax = new Vector2(healthRatio, 1f);
         fillRect.offsetMin = Vector2.zero;
         fillRect.offsetMax = Vector2.zero;
+    }
+
+    private Color GetHealthColor(float healthRatio)
+    {
+        Color color = healthRatio > 0.5f
+            ? Color.Lerp(warningHealthColor, healthyHealthColor, (healthRatio - 0.5f) * 2f)
+            : Color.Lerp(criticalHealthColor, warningHealthColor, healthRatio * 2f);
+
+        if (healthRatio <= 0.25f)
+        {
+            float pulse = Mathf.PingPong(Time.unscaledTime * 4.5f, 1f);
+            color = Color.Lerp(color, Color.white, pulse * 0.18f);
+        }
+
+        return color;
     }
 
     private void UpdateCrosshair(Vector2 viewportPosition)
