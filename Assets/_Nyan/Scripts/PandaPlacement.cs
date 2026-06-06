@@ -26,7 +26,7 @@ public class PandaPlacement : MonoBehaviour
         }
 
         spawnedPanda = Instantiate(pandaPrefab, reticle.transform.position, reticle.transform.rotation);
-        EnsurePandaHealth(spawnedPanda);
+        EnsureDamageable(spawnedPanda);
 
         if (lockPlaneAfterPlacement && drivingSurfaceManager != null)
         {
@@ -64,11 +64,15 @@ public class PandaPlacement : MonoBehaviour
         return Input.GetTouch(0).phase == TouchPhase.Began;
     }
 
-    private static void EnsurePandaHealth(GameObject panda)
+    private static void EnsureDamageable(GameObject panda)
     {
-        if (panda.GetComponentInChildren<PandaHealth>() != null)
+        MonoBehaviour[] behaviours = panda.GetComponentsInChildren<MonoBehaviour>(true);
+        foreach (MonoBehaviour behaviour in behaviours)
         {
-            return;
+            if (behaviour is IDamageable)
+            {
+                return;
+            }
         }
 
         panda.AddComponent<PandaHealth>();

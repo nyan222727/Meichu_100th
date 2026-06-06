@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PandaBossAI : MonoBehaviour
+public class PandaBossAI : MonoBehaviour, IDamageable
 {
     [Header("Target")]
     public Transform player;
@@ -18,6 +18,9 @@ public class PandaBossAI : MonoBehaviour
     public int maxHealth = 100;
     public int currentHealth;
     private bool isDead = false;
+
+    public Transform DamageTransform => transform;
+    public bool IsDefeated => isDead;
 
     [Header("Animation")]
     public Animator animator;

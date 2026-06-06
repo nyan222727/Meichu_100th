@@ -833,7 +833,7 @@ PlayerSettings:
   webGLCloseOnQuit: 0
   webWasm2023: 0
   scriptingDefineSymbols:
-    Android: NIANTICSPATIAL_NSDK_AR_LOADER_ENABLED
+    Android: NIANTICSPATIAL_NSDK_AR_LOADER_ENABLED;SENTIS_ANALYTICS_ENABLED
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:
