@@ -150,6 +150,11 @@ public sealed class PlayerCombatHud
             new Rect(16f, 80f, Screen.width - 32f, 34f),
             $"Travel charge: {state.ChargeTravelLabel}, Multiplier: {chargeText}",
             style);
+        GUI.Label(
+            new Rect(16f, 114f, Screen.width - 32f, 34f),
+            $"Distance: {state.DisplacementRatio * 100f:0}% | Gesture: {state.ChargeRatio * 100f:0}% | " +
+            $"Hit stun: {(state.HitStunReady ? "READY" : "--")}",
+            style);
     }
 
     private static Color GetPlayerHealthColor(PlayerCombatHudSettings settings, float healthRatio)
@@ -244,6 +249,7 @@ public struct PlayerCombatHudSettings
     public float HealthBarWidth;
     public float HealthBarAlpha;
     public float GestureChargeTravelForMax;
+    public float HitStunChargeThreshold;
     public float MinimumAttackDisplacement;
     public float MediumAttackDisplacement;
     public float StrongAttackDisplacement;
@@ -262,6 +268,7 @@ public struct PlayerCombatHudState
     public float ChargeRatio;
     public float ChargeMultiplier;
     public float DisplacementRatio;
+    public bool HitStunReady;
     public float PlayerHealthRatio;
     public bool HasUltimateTarget;
     public Vector2 UltimateTargetViewportPosition;

@@ -1042,7 +1042,9 @@ MonoBehaviour:
   redRadius: 0.5
   gestureChargeTravelForMax: 10
   minChargeMultiplier: 1
-  maxChargeMultiplier: 3
+  maxChargeMultiplier: 2.5
+  hitStunChargeThreshold: 0.7
+  hitStunDuration: 0.5
   minimumAttackDisplacement: 0.13
   mediumAttackDisplacement: 0.16
   strongAttackDisplacement: 0.3
@@ -1102,17 +1104,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   meleeRange: 1.2
-  weakDamage: 15
-  mediumDamage: 25
-  strongDamage: 40
+  meleeHitRadius: 0.35
   meleeHitMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  weakDamage: 15
+  mediumDamage: 22
+  strongDamage: 30
+  maxComboHits: 5
+  chargePerExtraHit: 0.25
+  comboInterval: 0.25
+  comboHitDamageScale: 0.7
   slashPrefab: {fileID: 5449880012781053551, guid: 930552d1104242ee974dd853eeef8295, type: 3}
-  slashDistanceFromCamera: 0.55
   slashLifetime: 0.22
   slashScale: {x: 1, y: 1, z: 1}
   slashAngle: -25
+  alternateSlashAngle: 35
   logAttacks: 1
 --- !u!114 &1923108519
 MonoBehaviour:

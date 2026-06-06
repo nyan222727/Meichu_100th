@@ -30,7 +30,11 @@ public class PlayerCombatController : MonoBehaviour
     [Tooltip("Total finger travel, normalized by the shorter screen side. Reaching this value gives max charge.")]
     [SerializeField, Range(0.01f, 10f)] private float gestureChargeTravelForMax = 1.2f;
     [SerializeField] private float minChargeMultiplier = 1f;
-    [SerializeField] private float maxChargeMultiplier = 3f;
+    [SerializeField] private float maxChargeMultiplier = 2.5f;
+
+    [Header("Charged Hit Stun")]
+    [SerializeField, Range(0f, 1f)] private float hitStunChargeThreshold = 0.7f;
+    [SerializeField, Min(0f)] private float hitStunDuration = 0.2f;
 
     [Header("Attack Displacement")]
     [InspectorName("Attack Trigger Radius")]
@@ -113,6 +117,8 @@ public class PlayerCombatController : MonoBehaviour
         attackDisplacementForMax = Mathf.Clamp(Mathf.Max(strongAttackDisplacement, attackDisplacementForMax), 0.01f, 1f);
         minChargeMultiplier = Mathf.Max(0f, minChargeMultiplier);
         maxChargeMultiplier = Mathf.Max(maxChargeMultiplier, minChargeMultiplier);
+        hitStunChargeThreshold = Mathf.Clamp01(hitStunChargeThreshold);
+        hitStunDuration = Mathf.Max(0f, hitStunDuration);
         chargeFillMaxAlpha = Mathf.Clamp(chargeFillMaxAlpha, 0.02f, 0.35f);
         chargeCenterViewport = ClampViewport(chargeCenterViewport);
         aimViewportPosition = ClampViewport(aimViewportPosition);
@@ -270,14 +276,15 @@ public class PlayerCombatController : MonoBehaviour
 
         float dragDistance = GetAttackDisplacement(viewportPosition);
         float chargeMultiplier = charge.Multiplier;
+        float chargeRatio = charge.Ratio;
 
         if (currentAttackMode == AttackMode.Ranged)
         {
-            ReleaseRangedAttack(viewportPosition, dragDistance, chargeMultiplier);
+            ReleaseRangedAttack(viewportPosition, dragDistance, chargeRatio, chargeMultiplier);
         }
         else if (currentAttackMode == AttackMode.Melee)
         {
-            ReleaseMeleeAttack(viewportPosition, dragDistance, chargeMultiplier);
+            ReleaseMeleeAttack(viewportPosition, dragDistance, chargeRatio, chargeMultiplier);
         }
 
         ResetInputState();
@@ -295,7 +302,11 @@ public class PlayerCombatController : MonoBehaviour
             logAttacks);
     }
 
-    private void ReleaseRangedAttack(Vector2 viewportPosition, float dragDistance, float chargeMultiplier)
+    private void ReleaseRangedAttack(
+        Vector2 viewportPosition,
+        float dragDistance,
+        float chargeRatio,
+        float chargeMultiplier)
     {
         if (!TryGetAttackStrength(dragDistance, out AttackStrength strength))
         {
@@ -307,7 +318,7 @@ public class PlayerCombatController : MonoBehaviour
             return;
         }
 
-        if (!TryGetRangedAttackStats(strength, out ProjectileAttackStats stats))
+        if (rangedAttackSettings == null)
         {
             if (logAttacks)
             {
@@ -317,11 +328,21 @@ public class PlayerCombatController : MonoBehaviour
             return;
         }
 
-        FireProjectile(stats.Impulse * chargeMultiplier, Mathf.RoundToInt(stats.Damage * chargeMultiplier));
+        float displacementRatio = Mathf.Clamp01(dragDistance / Mathf.Max(0.01f, attackDisplacementForMax));
+        ProjectileAttackStats stats = rangedAttackSettings.EvaluateStats(displacementRatio);
+        bool appliesHitStun = chargeRatio >= hitStunChargeThreshold;
+        FireProjectile(
+            stats.Impulse,
+            Mathf.RoundToInt(stats.Damage * chargeMultiplier),
+            appliesHitStun);
         ShowReleaseFeedback(viewportPosition, strength, true);
     }
 
-    private void ReleaseMeleeAttack(Vector2 viewportPosition, float dragDistance, float chargeMultiplier)
+    private void ReleaseMeleeAttack(
+        Vector2 viewportPosition,
+        float dragDistance,
+        float chargeRatio,
+        float chargeMultiplier)
     {
         if (!TryGetAttackStrength(dragDistance, out AttackStrength strength))
         {
@@ -334,14 +355,28 @@ public class PlayerCombatController : MonoBehaviour
         }
 
         EnsureMeleeAttack();
-        meleeAttack.Attack(mainCamera, aimViewportPosition, strength, chargeMultiplier);
+        float displacementRatio = Mathf.Clamp01(dragDistance / Mathf.Max(0.01f, attackDisplacementForMax));
+        meleeAttack.Attack(
+            mainCamera,
+            aimViewportPosition,
+            displacementRatio,
+            chargeRatio,
+            chargeMultiplier,
+            chargeRatio >= hitStunChargeThreshold,
+            hitStunDuration);
         ShowReleaseFeedback(viewportPosition, strength, false);
     }
 
-    private void FireProjectile(float impulse, int damage)
+    private void FireProjectile(float impulse, int damage, bool appliesHitStun)
     {
         EnsureProjectileAttack();
-        projectileAttack.Fire(mainCamera, aimViewportPosition, impulse, damage);
+        projectileAttack.Fire(
+            mainCamera,
+            aimViewportPosition,
+            impulse,
+            damage,
+            appliesHitStun,
+            hitStunDuration);
     }
 
     private void EnsureProjectileAttack()
@@ -466,17 +501,6 @@ public class PlayerCombatController : MonoBehaviour
         return true;
     }
 
-    private bool TryGetRangedAttackStats(AttackStrength strength, out ProjectileAttackStats stats)
-    {
-        if (rangedAttackSettings != null && rangedAttackSettings.TryGetStats(strength, out stats))
-        {
-            return true;
-        }
-
-        stats = default;
-        return false;
-    }
-
     private PlayerUltimateConfig GetUltimateConfig()
     {
         PlayerUltimateConfig config = ultimateSettings != null
@@ -529,6 +553,7 @@ public class PlayerCombatController : MonoBehaviour
             HealthBarWidth = healthBarWidth,
             HealthBarAlpha = healthBarAlpha,
             GestureChargeTravelForMax = gestureChargeTravelForMax,
+            HitStunChargeThreshold = hitStunChargeThreshold,
             MinimumAttackDisplacement = minimumAttackDisplacement,
             MediumAttackDisplacement = mediumAttackDisplacement,
             StrongAttackDisplacement = strongAttackDisplacement,
@@ -559,6 +584,7 @@ public class PlayerCombatController : MonoBehaviour
             ChargeRatio = charge.Ratio,
             ChargeMultiplier = charge.Multiplier,
             DisplacementRatio = displacementRatio,
+            HitStunReady = charge.Ratio >= hitStunChargeThreshold,
             PlayerHealthRatio = GetPlayerHealthRatio(),
             HasUltimateTarget = ultimate.HasTarget,
             UltimateTargetViewportPosition = ultimate.TargetViewportPosition,

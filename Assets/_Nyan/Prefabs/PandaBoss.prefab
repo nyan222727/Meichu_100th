@@ -121,7 +121,7 @@ MonoBehaviour:
   minAngleForSpeed: 15
   maxAngleForSpeed: 90
   faceOffsetY: 0
-  maxHealth: 100
+  maxHealth: 1000
   currentHealth: 0
   animator: {fileID: 1297938959382010523}
   throwTriggerName: Throw

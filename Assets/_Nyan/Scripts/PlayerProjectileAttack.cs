@@ -9,7 +9,13 @@ public class PlayerProjectileAttack : MonoBehaviour
     [SerializeField] private float launchVerticalOffset;
     [SerializeField] private bool logAttacks = true;
 
-    public bool Fire(Camera sourceCamera, Vector2 launchViewportPosition, float impulse, int damage)
+    public bool Fire(
+        Camera sourceCamera,
+        Vector2 launchViewportPosition,
+        float impulse,
+        int damage,
+        bool appliesHitStun,
+        float hitStunDuration)
     {
         if (projectilePrefab == null)
         {
@@ -46,12 +52,14 @@ public class PlayerProjectileAttack : MonoBehaviour
             projectileDamage = projectileObject.AddComponent<ProjectileDamage>();
         }
 
-        projectileDamage.SetDamage(damage);
+        projectileDamage.Configure(damage, appliesHitStun, hitStunDuration);
         projectile.AddForce(sourceCamera.transform.forward * impulse, ForceMode.Impulse);
 
         if (logAttacks)
         {
-            Debug.Log($"[PlayerProjectileAttack] Fired projectile. Impulse={impulse}, Damage={damage}");
+            Debug.Log(
+                $"[PlayerProjectileAttack] Fired projectile. Impulse={impulse:0.00}, " +
+                $"Damage={damage}, HitStun={appliesHitStun}");
         }
 
         return true;

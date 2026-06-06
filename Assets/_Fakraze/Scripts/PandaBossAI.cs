@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PandaBossAI : MonoBehaviour, IDamageable
+public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
 {
     [Header("Target")]
     public Transform player;
@@ -147,6 +147,8 @@ public class PandaBossAI : MonoBehaviour, IDamageable
     private bool hasStartedDeathSink = false;
 
     private bool isAttacking = false;
+    private float hitStunRemaining;
+    private float animatorSpeedBeforeHitStun = 1f;
 
     private PlayerHealth playerHealth;
 
@@ -233,8 +235,10 @@ public class PandaBossAI : MonoBehaviour, IDamageable
     private void Update()
     {
         CheckAnimatorDeadBoolForSink();
+        UpdateHitStun();
 
         if (isDead) return;
+        if (hitStunRemaining > 0f) return;
         if (player == null) return;
 
         UpdateTimers();
@@ -297,6 +301,34 @@ public class PandaBossAI : MonoBehaviour, IDamageable
         if (globalAttackTimer > 0f)
         {
             globalAttackTimer -= Time.deltaTime;
+        }
+    }
+
+    private void UpdateHitStun()
+    {
+        if (hitStunRemaining <= 0f)
+        {
+            return;
+        }
+
+        hitStunRemaining = Mathf.Max(0f, hitStunRemaining - Time.unscaledDeltaTime);
+        if (hitStunRemaining <= 0f && animator != null)
+        {
+            animator.speed = animatorSpeedBeforeHitStun;
+        }
+    }
+
+    private IEnumerator WaitForActiveSeconds(float duration)
+    {
+        float remaining = Mathf.Max(0f, duration);
+        while (remaining > 0f)
+        {
+            if (hitStunRemaining <= 0f)
+            {
+                remaining -= Time.deltaTime;
+            }
+
+            yield return null;
         }
     }
 
@@ -379,7 +411,7 @@ public class PandaBossAI : MonoBehaviour, IDamageable
             clawWarning.Show(clawRange, clawAngle);
         }
 
-        yield return new WaitForSeconds(clawWarningTime);
+        yield return WaitForActiveSeconds(clawWarningTime);
 
         Debug.Log("Panda Boss uses Claw Attack!");
 
@@ -466,7 +498,7 @@ public class PandaBossAI : MonoBehaviour, IDamageable
             soundController.PlayThrowSound();
         }
 
-        yield return new WaitForSeconds(plumWindupTime);
+        yield return WaitForActiveSeconds(plumWindupTime);
 
         Debug.Log("Panda Boss shoots Plum Blossom!");
 
@@ -569,7 +601,7 @@ public class PandaBossAI : MonoBehaviour, IDamageable
         for (int i = 0; i < targetPositions.Count; i++)
         {
             SpawnMeteor(targetPositions[i]);
-            yield return new WaitForSeconds(meteorSpawnDelay);
+            yield return WaitForActiveSeconds(meteorSpawnDelay);
         }
 
         isAttacking = false;
@@ -728,12 +760,42 @@ public class PandaBossAI : MonoBehaviour, IDamageable
         }
     }
 
+    public void ApplyHitStun(float duration)
+    {
+        if (isDead || duration <= 0f)
+        {
+            return;
+        }
+
+        if (hitStunRemaining <= 0f && animator != null)
+        {
+            animatorSpeedBeforeHitStun = animator.speed;
+        }
+
+        hitStunRemaining = Mathf.Max(hitStunRemaining, duration);
+        if (animator != null)
+        {
+            animator.speed = 0f;
+        }
+    }
+
+    private void ClearHitStun()
+    {
+        hitStunRemaining = 0f;
+        if (animator != null)
+        {
+            animator.speed = animatorSpeedBeforeHitStun;
+        }
+    }
+
     private void Die()
     {
         if (isDead) return;
 
         isDead = true;
         isAttacking = false;
+
+        ClearHitStun();
 
         StopAllCoroutines();
 
@@ -853,7 +915,7 @@ public class PandaBossAI : MonoBehaviour, IDamageable
 
         if (showDelay > 0f)
         {
-            yield return new WaitForSeconds(showDelay);
+            yield return WaitForActiveSeconds(showDelay);
         }
 
         clawWeaponObject.SetActive(true);
@@ -862,7 +924,7 @@ public class PandaBossAI : MonoBehaviour, IDamageable
 
         if (visibleDuration > 0f)
         {
-            yield return new WaitForSeconds(visibleDuration);
+            yield return WaitForActiveSeconds(visibleDuration);
         }
 
         clawWeaponObject.SetActive(false);

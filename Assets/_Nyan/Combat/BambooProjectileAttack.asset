@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weakImpulse: 3.5
   weakDamage: 10
-  mediumImpulse: 6
-  mediumDamage: 20
-  strongImpulse: 9
-  strongDamage: 30
+  mediumImpulse: 5.25
+  mediumDamage: 15
+  strongImpulse: 7
+  strongDamage: 20

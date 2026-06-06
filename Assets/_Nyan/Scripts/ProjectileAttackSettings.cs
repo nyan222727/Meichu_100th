@@ -10,6 +10,23 @@ public class ProjectileAttackSettings : ScriptableObject
     [SerializeField] private float strongImpulse = 9f;
     [SerializeField] private int strongDamage = 30;
 
+    public ProjectileAttackStats EvaluateStats(float displacementRatio)
+    {
+        float ratio = Mathf.Clamp01(displacementRatio);
+        if (ratio <= 0.5f)
+        {
+            float lowerRatio = ratio * 2f;
+            return new ProjectileAttackStats(
+                Mathf.Lerp(weakImpulse, mediumImpulse, lowerRatio),
+                Mathf.RoundToInt(Mathf.Lerp(weakDamage, mediumDamage, lowerRatio)));
+        }
+
+        float upperRatio = (ratio - 0.5f) * 2f;
+        return new ProjectileAttackStats(
+            Mathf.Lerp(mediumImpulse, strongImpulse, upperRatio),
+            Mathf.RoundToInt(Mathf.Lerp(mediumDamage, strongDamage, upperRatio)));
+    }
+
     public bool TryGetStats(AttackStrength strength, out ProjectileAttackStats stats)
     {
         switch (strength)

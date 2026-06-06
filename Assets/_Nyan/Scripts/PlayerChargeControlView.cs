@@ -13,6 +13,13 @@ public sealed class PlayerChargeControlView : MonoBehaviour
     [Header("Runtime Behaviour")]
     [SerializeField] private float powerArrowSpriteForwardAngle;
 
+    [Header("Charge Feedback")]
+    [SerializeField] private Color chargingColor = new Color(0.35f, 0.84f, 0.77f, 0.92f);
+    [SerializeField] private Color hitStunReadyColor = new Color(1f, 0.71f, 0.37f, 0.96f);
+    [SerializeField] private Color fullChargeColor = new Color(1f, 0.82f, 0.4f, 1f);
+    [SerializeField, Min(0f)] private float fullChargePulseSpeed = 5f;
+    [SerializeField, Range(0f, 0.4f)] private float fullChargePulseAmount = 0.16f;
+
     private Color powerArrowBaseColor;
     private bool initialized;
     private bool warnedMissingReferences;
@@ -38,12 +45,30 @@ public sealed class PlayerChargeControlView : MonoBehaviour
 
         SetViewportPosition(settings.ChargeCenterViewport, rootSize);
         chargeArc.fillAmount = Mathf.Clamp01(state.ChargeRatio);
+        chargeArc.color = GetChargeColor(state.ChargeRatio, settings.HitStunChargeThreshold);
 
         bool melee = state.AttackModeLabel == "Melee";
         meleeIcon.gameObject.SetActive(melee);
         rangedIcon.gameObject.SetActive(!melee);
 
         UpdatePowerArrow(settings, state, rootSize);
+    }
+
+    private Color GetChargeColor(float chargeRatio, float hitStunThreshold)
+    {
+        float ratio = Mathf.Clamp01(chargeRatio);
+        float threshold = Mathf.Clamp(hitStunThreshold, 0.01f, 0.99f);
+        Color color = ratio < threshold
+            ? Color.Lerp(chargingColor, hitStunReadyColor, ratio / threshold)
+            : Color.Lerp(hitStunReadyColor, fullChargeColor, (ratio - threshold) / (1f - threshold));
+
+        if (ratio >= 0.999f)
+        {
+            float pulse = (Mathf.Sin(Time.unscaledTime * fullChargePulseSpeed) + 1f) * 0.5f;
+            color = Color.Lerp(color, Color.white, pulse * fullChargePulseAmount);
+        }
+
+        return color;
     }
 
     private bool Initialize()
