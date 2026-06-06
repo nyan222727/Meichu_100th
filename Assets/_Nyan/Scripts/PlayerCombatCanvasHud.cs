@@ -8,17 +8,23 @@ public class PlayerCombatCanvasHud : MonoBehaviour
     [SerializeField] private RectTransform root;
 
     [Header("Replaceable Sprites")]
+    [SerializeField] private Sprite controlRingBaseSprite;
     [SerializeField] private Sprite meleeIconSprite;
     [SerializeField] private Sprite rangedIconSprite;
+    [SerializeField] private Sprite powerArrowSprite;
+    [SerializeField] private Sprite ultimateTargetBaseSprite;
     [SerializeField] private Sprite ultimateIconSprite;
     [SerializeField] private Sprite crosshairSprite;
 
     [Header("Figma Layout")]
     [SerializeField] private Vector2 referenceResolution = new Vector2(390f, 844f);
-    [SerializeField] private Vector2 healthBarOffset = new Vector2(14f, -15f);
-    [SerializeField] private Vector2 healthBarSize = new Vector2(108f, 10f);
-    [SerializeField] private float iconSize = 50f;
+    [SerializeField] private Vector2 healthBarOffset = new Vector2(40f, -45f);
+    [SerializeField] private Vector2 healthBarSize = new Vector2(310f, 30f);
+    [SerializeField] private float iconSize = 35f;
     [SerializeField] private float crosshairSize = 35f;
+    [SerializeField] private float powerArrowSpriteForwardAngle = 110f;
+    [SerializeField] private float powerArrowWidthRatio = 0.28f;
+    [SerializeField] private float powerArrowMinLength = 30f;
     [SerializeField] private float releaseFlashDuration = 0.26f;
 
     [Header("Colors")]
@@ -28,6 +34,11 @@ public class PlayerCombatCanvasHud : MonoBehaviour
     [SerializeField] private Color rangedZoneColor = new Color(1f, 0.36f, 0.38f, 0.36f);
     [SerializeField] private Color blueZoneColor = new Color(0.46f, 0.91f, 1f, 0.58f);
     [SerializeField] private Color chargeFillColor = new Color(0.1f, 0.55f, 1f, 0.22f);
+    [SerializeField] private Color controlRingBaseColor = new Color(1f, 1f, 1f, 1f);
+    [SerializeField] private Color chargeArcColor = new Color(0.055f, 0.93f, 0.075f, 1f);
+    [SerializeField] private Color powerArrowColor = new Color(1f, 1f, 1f, 0.8f);
+    [SerializeField] private Color ultimateBaseColor = new Color(0f, 0f, 0f, 0.57f);
+    [SerializeField] private Color ultimateRingColor = new Color(1f, 1f, 1f, 0.3f);
     [SerializeField] private Color meleeFlashColor = new Color(1f, 0.96f, 0.3f, 1f);
     [SerializeField] private Color rangedFlashColor = new Color(1f, 0.25f, 0.35f, 1f);
     [SerializeField] private Color ultimateColor = new Color(0.7f, 0.68f, 1f, 0.95f);
@@ -40,9 +51,14 @@ public class PlayerCombatCanvasHud : MonoBehaviour
     private Image rangedZone;
     private Image blueZone;
     private Image chargeFill;
+    private Image controlRingBase;
+    private Image chargeArc;
+    private Image powerArrow;
     private Image meleeIcon;
     private Image rangedIcon;
-    private Image ultimateTarget;
+    private Image ultimateTargetBackground;
+    private Image ultimateTargetRing;
+    private Image ultimateTargetIcon;
     private Image crosshair;
     private Image releaseFlash;
 
@@ -50,10 +66,13 @@ public class PlayerCombatCanvasHud : MonoBehaviour
     private Sprite leftHalfRingSprite;
     private Sprite rightHalfRingSprite;
     private Sprite ringSprite;
+    private Sprite thickRingSprite;
+    private Sprite solidSprite;
     private Sprite triangleSprite;
     private Sprite starSprite;
     private Sprite daggerSprite;
     private Sprite bowSprite;
+    private Sprite generatedPowerArrowSprite;
 
     private float releaseFlashStartedAt = -999f;
     private float releaseFlashStrength;
@@ -68,6 +87,8 @@ public class PlayerCombatCanvasHud : MonoBehaviour
         healthBarSize.y = Mathf.Max(1f, healthBarSize.y);
         iconSize = Mathf.Max(1f, iconSize);
         crosshairSize = Mathf.Max(1f, crosshairSize);
+        powerArrowWidthRatio = Mathf.Max(0.01f, powerArrowWidthRatio);
+        powerArrowMinLength = Mathf.Max(1f, powerArrowMinLength);
         releaseFlashDuration = Mathf.Max(0.01f, releaseFlashDuration);
     }
 
@@ -124,19 +145,30 @@ public class PlayerCombatCanvasHud : MonoBehaviour
         meleeZone = CreateImage("Melee Zone", root, leftHalfRingSprite, meleeZoneColor);
         rangedZone = CreateImage("Ranged Zone", root, rightHalfRingSprite, rangedZoneColor);
         chargeFill = CreateImage("Charge Fill", root, circleSprite, Color.clear);
-        blueZone = CreateImage("Charge Start Zone", root, ringSprite, blueZoneColor);
+        blueZone = CreateImage("Charge Start Zone", root, ringSprite, Color.clear);
+        controlRingBase = CreateImage("Control Ring Base", root, GetUsableSprite(controlRingBaseSprite, thickRingSprite, 192), controlRingBaseColor);
+        chargeArc = CreateImage("Charge Arc", root, thickRingSprite, chargeArcColor);
+        ConfigureRadialFill(chargeArc);
+        powerArrow = CreateImage("Power Arrow", root, GetUsableSprite(powerArrowSprite, generatedPowerArrowSprite, 192), powerArrowColor);
 
-        meleeIcon = CreateImage("Melee Icon", root, meleeIconSprite != null ? meleeIconSprite : daggerSprite, iconColor);
-        rangedIcon = CreateImage("Ranged Icon", root, rangedIconSprite != null ? rangedIconSprite : bowSprite, iconColor);
+        meleeIcon = CreateImage("Melee Icon", root, GetUsableSprite(meleeIconSprite, daggerSprite, 128), iconColor);
+        rangedIcon = CreateImage("Ranged Icon", root, GetUsableSprite(rangedIconSprite, bowSprite, 128), iconColor);
         crosshair = CreateImage("Crosshair", root, crosshairSprite != null ? crosshairSprite : triangleSprite, crosshairColor);
-        ultimateTarget = CreateImage("Ultimate Target", root, ultimateIconSprite != null ? ultimateIconSprite : starSprite, ultimateColor);
+        ultimateTargetBackground = CreateImage("Ultimate Target Background", root, ultimateTargetBaseSprite != null ? ultimateTargetBaseSprite : circleSprite, ultimateBaseColor);
+        ultimateTargetRing = CreateImage("Ultimate Target Ring", root, thickRingSprite, ultimateRingColor);
+        ultimateTargetIcon = CreateImage("Ultimate Target Icon", root, ultimateIconSprite != null ? ultimateIconSprite : starSprite, ultimateColor);
         releaseFlash = CreateImage("Release Flash", root, circleSprite, Color.clear);
 
-        healthBackground = CreateImage("Player Health Background", root, circleSprite, healthBackgroundColor);
-        healthFill = CreateImage("Player Health Fill", healthBackground.rectTransform, circleSprite, healthFillColor);
+        healthBackground = CreateImage("Player Health Background", root, solidSprite, healthBackgroundColor);
+        healthFill = CreateImage("Player Health Fill", healthBackground.rectTransform, solidSprite, healthFillColor);
 
         chargeFill.enabled = false;
-        ultimateTarget.enabled = false;
+        blueZone.enabled = false;
+        chargeArc.enabled = false;
+        powerArrow.enabled = false;
+        ultimateTargetBackground.enabled = false;
+        ultimateTargetRing.enabled = false;
+        ultimateTargetIcon.enabled = false;
         releaseFlash.enabled = false;
     }
 
@@ -169,7 +201,7 @@ public class PlayerCombatCanvasHud : MonoBehaviour
         backgroundRect.anchoredPosition = healthBarOffset;
         backgroundRect.sizeDelta = healthBarSize;
 
-        healthBackground.type = Image.Type.Sliced;
+        healthBackground.type = Image.Type.Simple;
         healthBackground.color = healthBackgroundColor;
 
         RectTransform fillRect = healthFill.rectTransform;
@@ -189,32 +221,64 @@ public class PlayerCombatCanvasHud : MonoBehaviour
         float outerSize = settings.RedRadius * radiusScale * 2f;
         float blueSize = settings.BlueRadius * radiusScale * 2f;
         float chargeRatio = Mathf.Clamp01(state.ChargeRatio);
-        float chargeSize = Mathf.Lerp(blueSize * 0.32f, blueSize, chargeRatio);
+        float chargeSize = Mathf.Lerp(0f, blueSize, chargeRatio);
+
+        SetViewportRect(crosshair.rectTransform, settings.AimViewportPosition, Vector2.one * crosshairSize, rootSize);
+
+        bool showControl = state.IsDragging;
+        meleeZone.enabled = false;
+        rangedZone.enabled = false;
+        blueZone.enabled = false;
+        controlRingBase.enabled = showControl;
+        meleeIcon.enabled = showControl && IsMeleeMode(state);
+        rangedIcon.enabled = showControl && !IsMeleeMode(state);
+
+        if (!showControl)
+        {
+            chargeFill.enabled = false;
+            chargeArc.enabled = false;
+            powerArrow.enabled = false;
+            return;
+        }
 
         SetViewportRect(meleeZone.rectTransform, settings.ChargeCenterViewport, new Vector2(outerSize, outerSize), rootSize);
         SetViewportRect(rangedZone.rectTransform, settings.ChargeCenterViewport, new Vector2(outerSize, outerSize), rootSize);
         SetViewportRect(blueZone.rectTransform, settings.ChargeCenterViewport, new Vector2(blueSize, blueSize), rootSize);
-        blueZone.enabled = true;
+        SetViewportRect(controlRingBase.rectTransform, settings.ChargeCenterViewport, new Vector2(blueSize, blueSize), rootSize);
+        SetViewportRect(chargeArc.rectTransform, settings.ChargeCenterViewport, new Vector2(blueSize, blueSize), rootSize);
 
-        chargeFill.enabled = state.IsDragging || chargeRatio > 0.01f;
+        controlRingBase.color = controlRingBaseColor;
+
+        chargeFill.enabled = state.IsDragging && chargeRatio > 0.01f;
         if (chargeFill.enabled)
         {
             SetViewportRect(chargeFill.rectTransform, settings.ChargeCenterViewport, new Vector2(chargeSize, chargeSize), rootSize);
             Color fillColor = state.ChargeInvalidated
                 ? new Color(1f, 0.08f, 0.06f, 0.28f)
                 : chargeFillColor;
-            fillColor.a = Mathf.Max(fillColor.a * chargeRatio, state.IsDragging ? 0.16f : 0f);
+            fillColor.a *= chargeRatio;
             chargeFill.color = fillColor;
         }
 
-        SetViewportRect(crosshair.rectTransform, settings.AimViewportPosition, Vector2.one * crosshairSize, rootSize);
-        SetIconPosition(meleeIcon.rectTransform, settings, -1f, rootSize);
-        SetIconPosition(rangedIcon.rectTransform, settings, 1f, rootSize);
+        chargeArc.enabled = state.IsDragging && chargeRatio > 0.01f;
+        if (chargeArc.enabled)
+        {
+            chargeArc.fillAmount = chargeRatio;
+            chargeArc.color = state.ChargeInvalidated
+                ? new Color(1f, 0.08f, 0.06f, 0.95f)
+                : chargeArcColor;
+        }
+
+        SetViewportRect(meleeIcon.rectTransform, settings.ChargeCenterViewport, Vector2.one * iconSize, rootSize);
+        SetViewportRect(rangedIcon.rectTransform, settings.ChargeCenterViewport, Vector2.one * iconSize, rootSize);
+        UpdatePowerArrow(settings, state, rootSize);
     }
 
     private void UpdateUltimateTarget(PlayerCombatHudSettings settings, PlayerCombatHudState state)
     {
-        ultimateTarget.enabled = state.HasUltimateTarget;
+        ultimateTargetBackground.enabled = state.HasUltimateTarget;
+        ultimateTargetRing.enabled = state.HasUltimateTarget;
+        ultimateTargetIcon.enabled = state.HasUltimateTarget;
         if (!state.HasUltimateTarget)
         {
             return;
@@ -227,8 +291,48 @@ public class PlayerCombatCanvasHud : MonoBehaviour
         Color color = ultimateColor;
         color.a *= pulse;
 
-        SetViewportRect(ultimateTarget.rectTransform, state.UltimateTargetViewportPosition, Vector2.one * size, rootSize);
-        ultimateTarget.color = color;
+        SetViewportRect(ultimateTargetBackground.rectTransform, state.UltimateTargetViewportPosition, Vector2.one * size, rootSize);
+        SetViewportRect(ultimateTargetRing.rectTransform, state.UltimateTargetViewportPosition, Vector2.one * size, rootSize);
+        SetViewportRect(ultimateTargetIcon.rectTransform, state.UltimateTargetViewportPosition, Vector2.one * (size * 0.42f), rootSize);
+        ultimateTargetBackground.color = ultimateBaseColor;
+        ultimateTargetRing.color = ultimateRingColor;
+        ultimateTargetIcon.color = color;
+    }
+
+    private void UpdatePowerArrow(PlayerCombatHudSettings settings, PlayerCombatHudState state, Vector2 rootSize)
+    {
+        Vector2 start = new Vector2(
+            settings.ChargeCenterViewport.x * rootSize.x,
+            settings.ChargeCenterViewport.y * rootSize.y);
+        Vector2 end = new Vector2(
+            state.LastPointerViewportPosition.x * rootSize.x,
+            state.LastPointerViewportPosition.y * rootSize.y);
+        Vector2 delta = end - start;
+        float length = delta.magnitude;
+
+        powerArrow.enabled = state.HasPointerPosition && length >= powerArrowMinLength;
+        if (!powerArrow.enabled)
+        {
+            return;
+        }
+
+        RectTransform arrowRect = powerArrow.rectTransform;
+        arrowRect.anchorMin = Vector2.zero;
+        arrowRect.anchorMax = Vector2.zero;
+        arrowRect.pivot = new Vector2(0.5f, 0.5f);
+        arrowRect.anchoredPosition = (start + end) * 0.5f;
+
+        float angle = Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
+        bool usingCustomArrow = powerArrowSprite != null && powerArrow.sprite == powerArrowSprite;
+        float forwardAngle = usingCustomArrow ? powerArrowSpriteForwardAngle : 90f;
+        arrowRect.sizeDelta = new Vector2(Mathf.Max(16f, length * powerArrowWidthRatio), length);
+        arrowRect.localEulerAngles = new Vector3(0f, 0f, angle - forwardAngle);
+
+        Color color = state.ChargeInvalidated
+            ? new Color(1f, 0.08f, 0.06f, powerArrowColor.a)
+            : powerArrowColor;
+        color.a *= Mathf.Lerp(0.22f, 1f, Mathf.Clamp01(state.DisplacementRatio));
+        powerArrow.color = color;
     }
 
     private void UpdateReleaseFlash(PlayerCombatHudSettings settings)
@@ -251,6 +355,11 @@ public class PlayerCombatCanvasHud : MonoBehaviour
         releaseFlash.enabled = true;
         releaseFlash.color = color;
         SetViewportRect(releaseFlash.rectTransform, releaseFlashViewportPosition, Vector2.one * Mathf.Max(size, baseRadius * radiusScale * 0.65f), rootSize);
+    }
+
+    private static bool IsMeleeMode(PlayerCombatHudState state)
+    {
+        return state.AttackModeLabel == "Melee";
     }
 
     private void SetIconPosition(RectTransform iconRect, PlayerCombatHudSettings settings, float side, Vector2 rootSize)
@@ -298,23 +407,50 @@ public class PlayerCombatCanvasHud : MonoBehaviour
         return image;
     }
 
+    private static Sprite GetUsableSprite(Sprite customSprite, Sprite fallbackSprite, int minimumTextureSize)
+    {
+        if (customSprite == null || customSprite.texture == null)
+        {
+            return fallbackSprite;
+        }
+
+        if (customSprite.texture.width < minimumTextureSize || customSprite.texture.height < minimumTextureSize)
+        {
+            return fallbackSprite;
+        }
+
+        return customSprite;
+    }
+
+    private static void ConfigureRadialFill(Image image)
+    {
+        image.type = Image.Type.Filled;
+        image.fillMethod = Image.FillMethod.Radial360;
+        image.fillOrigin = (int)Image.Origin360.Top;
+        image.fillClockwise = true;
+        image.fillAmount = 0f;
+    }
+
     private void EnsureSprites()
     {
         circleSprite ??= CreateCircleSprite(CircleSpriteMode.Full);
         leftHalfRingSprite ??= CreateCircleSprite(CircleSpriteMode.LeftHalfRing);
         rightHalfRingSprite ??= CreateCircleSprite(CircleSpriteMode.RightHalfRing);
         ringSprite ??= CreateCircleSprite(CircleSpriteMode.Ring);
+        thickRingSprite ??= CreateCircleSprite(CircleSpriteMode.ThickRing);
+        solidSprite ??= CreateSolidSprite();
         triangleSprite ??= CreateTriangleSprite();
         starSprite ??= CreateStarSprite();
         daggerSprite ??= CreateDaggerSprite();
         bowSprite ??= CreateBowSprite();
+        generatedPowerArrowSprite ??= CreatePowerArrowSprite();
     }
 
     private Sprite CreateCircleSprite(CircleSpriteMode mode)
     {
-        const int size = 128;
+        const int size = 512;
         const float center = (size - 1) * 0.5f;
-        const float radius = size * 0.49f;
+        const float radius = size * 0.485f;
         Texture2D texture = CreateTransparentTexture(size, size);
         Color32[] pixels = new Color32[size * size];
 
@@ -325,24 +461,43 @@ public class PlayerCombatCanvasHud : MonoBehaviour
                 float dx = x - center;
                 float dy = y - center;
                 float distance = Mathf.Sqrt((dx * dx) + (dy * dy));
-                bool visible = distance <= radius;
-
+                float alpha = SmoothEdge(radius - distance);
                 if (mode == CircleSpriteMode.Ring)
                 {
-                    visible = distance <= radius && distance >= radius * 0.94f;
+                    alpha = Mathf.Min(alpha, SmoothEdge(distance - (radius * 0.94f)));
+                }
+                else if (mode == CircleSpriteMode.ThickRing)
+                {
+                    alpha = Mathf.Min(alpha, SmoothEdge(distance - (radius * 0.72f)));
                 }
                 else if (mode == CircleSpriteMode.LeftHalfRing)
                 {
-                    visible &= x <= center && distance >= radius * 0.4f;
+                    alpha = Mathf.Min(alpha, SmoothEdge(distance - (radius * 0.4f)));
+                    alpha *= SmoothEdge(center - x);
                 }
                 else if (mode == CircleSpriteMode.RightHalfRing)
                 {
-                    visible &= x >= center && distance >= radius * 0.4f;
+                    alpha = Mathf.Min(alpha, SmoothEdge(distance - (radius * 0.4f)));
+                    alpha *= SmoothEdge(x - center);
                 }
 
-                byte alpha = visible ? (byte)255 : (byte)0;
-                pixels[(y * size) + x] = new Color32(255, 255, 255, alpha);
+                pixels[(y * size) + x] = new Color32(255, 255, 255, ToAlphaByte(alpha));
             }
+        }
+
+        texture.SetPixels32(pixels);
+        texture.Apply();
+        return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 100f);
+    }
+
+    private Sprite CreateSolidSprite()
+    {
+        const int size = 4;
+        Texture2D texture = CreateTransparentTexture(size, size);
+        Color32[] pixels = new Color32[size * size];
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            pixels[i] = new Color32(255, 255, 255, 255);
         }
 
         texture.SetPixels32(pixels);
@@ -352,7 +507,7 @@ public class PlayerCombatCanvasHud : MonoBehaviour
 
     private Sprite CreateTriangleSprite()
     {
-        const int size = 64;
+        const int size = 128;
         Texture2D texture = CreateTransparentTexture(size, size);
         Color32[] pixels = new Color32[size * size];
         Vector2 a = new Vector2(size * 0.5f, size * 0.78f);
@@ -363,8 +518,8 @@ public class PlayerCombatCanvasHud : MonoBehaviour
         {
             for (int x = 0; x < size; x++)
             {
-                bool visible = IsPointInTriangle(new Vector2(x, y), a, b, c);
-                pixels[(y * size) + x] = new Color32(255, 255, 255, visible ? (byte)255 : (byte)0);
+                float coverage = GetTriangleCoverage(x, y, a, b, c);
+                pixels[(y * size) + x] = new Color32(255, 255, 255, ToAlphaByte(coverage));
             }
         }
 
@@ -375,7 +530,7 @@ public class PlayerCombatCanvasHud : MonoBehaviour
 
     private Sprite CreateStarSprite()
     {
-        const int size = 64;
+        const int size = 128;
         const float center = (size - 1) * 0.5f;
         Texture2D texture = CreateTransparentTexture(size, size);
         Color32[] pixels = new Color32[size * size];
@@ -390,8 +545,8 @@ public class PlayerCombatCanvasHud : MonoBehaviour
                 float distance = Mathf.Sqrt((dx * dx) + (dy * dy)) / center;
                 float sector = Mathf.Abs(Mathf.Repeat((angle / (Mathf.PI * 2f)) * 5f, 1f) - 0.5f) * 2f;
                 float allowed = Mathf.Lerp(0.82f, 0.35f, sector);
-                bool visible = distance <= allowed;
-                pixels[(y * size) + x] = new Color32(255, 255, 255, visible ? (byte)255 : (byte)0);
+                float alpha = SmoothEdge((allowed - distance) * center);
+                pixels[(y * size) + x] = new Color32(255, 255, 255, ToAlphaByte(alpha));
             }
         }
 
@@ -402,13 +557,14 @@ public class PlayerCombatCanvasHud : MonoBehaviour
 
     private Sprite CreateDaggerSprite()
     {
-        const int size = 64;
+        const int size = 256;
+        const float scale = size / 64f;
         Texture2D texture = CreateTransparentTexture(size, size);
         Color32[] pixels = new Color32[size * size];
-        DrawLine(pixels, size, new Vector2(17f, 17f), new Vector2(48f, 48f), 2.6f);
-        DrawLine(pixels, size, new Vector2(18f, 12f), new Vector2(26f, 20f), 2.5f);
-        DrawLine(pixels, size, new Vector2(24f, 18f), new Vector2(15f, 27f), 2.2f);
-        DrawLine(pixels, size, new Vector2(43f, 43f), new Vector2(52f, 51f), 1.8f);
+        DrawLine(pixels, size, new Vector2(17f, 17f) * scale, new Vector2(48f, 48f) * scale, 2.6f * scale);
+        DrawLine(pixels, size, new Vector2(18f, 12f) * scale, new Vector2(26f, 20f) * scale, 2.5f * scale);
+        DrawLine(pixels, size, new Vector2(24f, 18f) * scale, new Vector2(15f, 27f) * scale, 2.2f * scale);
+        DrawLine(pixels, size, new Vector2(43f, 43f) * scale, new Vector2(52f, 51f) * scale, 1.8f * scale);
         texture.SetPixels32(pixels);
         texture.Apply();
         return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 100f);
@@ -416,30 +572,51 @@ public class PlayerCombatCanvasHud : MonoBehaviour
 
     private Sprite CreateBowSprite()
     {
-        const int size = 64;
+        const int size = 256;
+        const float scale = size / 64f;
         Texture2D texture = CreateTransparentTexture(size, size);
         Color32[] pixels = new Color32[size * size];
-        DrawLine(pixels, size, new Vector2(12f, 31f), new Vector2(52f, 31f), 1.8f);
-        DrawLine(pixels, size, new Vector2(44f, 24f), new Vector2(52f, 31f), 1.8f);
-        DrawLine(pixels, size, new Vector2(44f, 38f), new Vector2(52f, 31f), 1.8f);
-        DrawLine(pixels, size, new Vector2(22f, 14f), new Vector2(22f, 50f), 1.8f);
+        DrawLine(pixels, size, new Vector2(12f, 31f) * scale, new Vector2(52f, 31f) * scale, 1.8f * scale);
+        DrawLine(pixels, size, new Vector2(44f, 24f) * scale, new Vector2(52f, 31f) * scale, 1.8f * scale);
+        DrawLine(pixels, size, new Vector2(44f, 38f) * scale, new Vector2(52f, 31f) * scale, 1.8f * scale);
+        DrawLine(pixels, size, new Vector2(22f, 14f) * scale, new Vector2(22f, 50f) * scale, 1.8f * scale);
 
         for (int y = 0; y < size; y++)
         {
             for (int x = 0; x < size; x++)
             {
                 Vector2 point = new Vector2(x, y);
-                float distance = Mathf.Abs(Vector2.Distance(point, new Vector2(28f, 32f)) - 21f);
-                if (x >= 20 && x <= 48 && distance <= 1.8f)
-                {
-                    pixels[(y * size) + x] = new Color32(255, 255, 255, 255);
-                }
+                float distance = Mathf.Abs(Vector2.Distance(point, new Vector2(28f, 32f) * scale) - (21f * scale));
+                bool inArc = x >= 20f * scale && x <= 48f * scale;
+                float alpha = inArc ? SmoothEdge((1.8f * scale) - distance) : 0f;
+                BlendPixel(pixels, (y * size) + x, alpha);
             }
         }
 
         texture.SetPixels32(pixels);
         texture.Apply();
         return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 100f);
+    }
+
+    private Sprite CreatePowerArrowSprite()
+    {
+        const int width = 192;
+        const int height = 512;
+        Texture2D texture = CreateTransparentTexture(width, height);
+        Color32[] pixels = new Color32[width * height];
+        Vector2 start = new Vector2(width * 0.5f, height * 0.12f);
+        Vector2 tip = new Vector2(width * 0.5f, height * 0.84f);
+        Vector2 leftHead = new Vector2(width * 0.25f, height * 0.62f);
+        Vector2 rightHead = new Vector2(width * 0.75f, height * 0.62f);
+        float lineWidth = width * 0.045f;
+
+        DrawLine(pixels, width, height, start, tip, lineWidth);
+        DrawLine(pixels, width, height, tip, leftHead, lineWidth);
+        DrawLine(pixels, width, height, tip, rightHead, lineWidth);
+
+        texture.SetPixels32(pixels);
+        texture.Apply();
+        return Sprite.Create(texture, new Rect(0f, 0f, width, height), new Vector2(0.5f, 0.5f), 100f);
     }
 
     private static Texture2D CreateTransparentTexture(int width, int height)
@@ -452,17 +629,58 @@ public class PlayerCombatCanvasHud : MonoBehaviour
 
     private static void DrawLine(Color32[] pixels, int size, Vector2 start, Vector2 end, float width)
     {
-        for (int y = 0; y < size; y++)
+        DrawLine(pixels, size, size, start, end, width);
+    }
+
+    private static void DrawLine(Color32[] pixels, int textureWidth, int textureHeight, Vector2 start, Vector2 end, float width)
+    {
+        for (int y = 0; y < textureHeight; y++)
         {
-            for (int x = 0; x < size; x++)
+            for (int x = 0; x < textureWidth; x++)
             {
                 float distance = DistanceToSegment(new Vector2(x, y), start, end);
-                if (distance <= width)
+                BlendPixel(pixels, (y * textureWidth) + x, SmoothEdge(width - distance));
+            }
+        }
+    }
+
+    private static void BlendPixel(Color32[] pixels, int index, float alpha)
+    {
+        byte alphaByte = ToAlphaByte(alpha);
+        if (alphaByte <= pixels[index].a)
+        {
+            return;
+        }
+
+        pixels[index] = new Color32(255, 255, 255, alphaByte);
+    }
+
+    private static byte ToAlphaByte(float alpha)
+    {
+        return (byte)Mathf.RoundToInt(Mathf.Clamp01(alpha) * 255f);
+    }
+
+    private static float SmoothEdge(float distanceInside)
+    {
+        return Mathf.Clamp01(distanceInside + 0.5f);
+    }
+
+    private static float GetTriangleCoverage(int x, int y, Vector2 a, Vector2 b, Vector2 c)
+    {
+        int covered = 0;
+        for (int sampleY = 0; sampleY < 2; sampleY++)
+        {
+            for (int sampleX = 0; sampleX < 2; sampleX++)
+            {
+                Vector2 point = new Vector2(x + 0.25f + (sampleX * 0.5f), y + 0.25f + (sampleY * 0.5f));
+                if (IsPointInTriangle(point, a, b, c))
                 {
-                    pixels[(y * size) + x] = new Color32(255, 255, 255, 255);
+                    covered++;
                 }
             }
         }
+
+        return covered / 4f;
     }
 
     private static float DistanceToSegment(Vector2 point, Vector2 start, Vector2 end)
@@ -513,6 +731,7 @@ public class PlayerCombatCanvasHud : MonoBehaviour
         Full,
         LeftHalfRing,
         RightHalfRing,
-        Ring
+        Ring,
+        ThickRing
     }
 }

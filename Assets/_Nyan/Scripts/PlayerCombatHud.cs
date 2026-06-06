@@ -11,10 +11,7 @@ public sealed class PlayerCombatHud
 
         DrawChargeFill(settings, state);
         DrawAttackModeSplitLine(settings, state);
-        DrawChargeRing(settings, settings.RedRadius, new Color(1f, 0.15f, 0.05f, 0.9f));
-        DrawChargeRing(settings, settings.YellowRadius, new Color(1f, 0.85f, 0.1f, 0.9f));
-        DrawChargeRing(settings, settings.GreenRadius, new Color(0.2f, 0.9f, 0.2f, 0.9f));
-        DrawChargeRing(settings, settings.BlueRadius, new Color(0.1f, 0.45f, 1f, 0.95f));
+        DrawDragDistanceGuides(settings, state);
         DrawUltimateTarget(settings, state);
         DrawCrosshair(settings);
         DrawPointerMarker(settings, state);
@@ -70,10 +67,23 @@ public sealed class PlayerCombatHud
         DrawLine(new Vector2(rightInner, y - settings.HealthBarWidth * 0.22f), new Vector2(rightInner + rightHealthLength, y - settings.HealthBarWidth * 0.22f), new Color(1f, 0.55f, 0.45f, settings.HealthBarAlpha * 0.35f), Mathf.Max(1f, settings.HealthBarWidth * 0.18f));
     }
 
-    private void DrawChargeRing(PlayerCombatHudSettings settings, float viewportRadius, Color color)
+    private void DrawDragDistanceGuides(PlayerCombatHudSettings settings, PlayerCombatHudState state)
     {
+        if (!state.IsDragging)
+        {
+            return;
+        }
+
         Vector2 center = ViewportToGuiPoint(settings.ChargeCenterViewport);
-        float radius = viewportRadius * GetChargeRadiusScale();
+        DrawDistanceGuide(settings, center, settings.MinimumAttackDisplacement, new Color(0.75f, 0.75f, 0.75f, 0.55f));
+        DrawDistanceGuide(settings, center, settings.MediumAttackDisplacement, new Color(0.25f, 0.95f, 0.25f, 0.65f));
+        DrawDistanceGuide(settings, center, settings.StrongAttackDisplacement, new Color(1f, 0.78f, 0.15f, 0.72f));
+        DrawDistanceGuide(settings, center, settings.MaxAttackDisplacement, new Color(1f, 0.12f, 0.08f, 0.8f));
+    }
+
+    private void DrawDistanceGuide(PlayerCombatHudSettings settings, Vector2 center, float normalizedDistance, Color color)
+    {
+        float radius = normalizedDistance * GetChargeRadiusScale();
         DrawEllipse(settings, center, radius, radius, color, settings.OverlayLineWidth);
     }
 
@@ -124,7 +134,7 @@ public sealed class PlayerCombatHud
         };
 
         GUI.color = Color.white;
-        GUI.Label(new Rect(16f, 12f, Screen.width - 32f, 34f), "Start in BLUE. Release left for melee, right for bow.", style);
+        GUI.Label(new Rect(16f, 12f, Screen.width - 32f, 34f), "Press anywhere. Left=start melee, right=start bow. Drag distance=power.", style);
 
         if (!state.HasPointerPosition)
         {
@@ -134,7 +144,11 @@ public sealed class PlayerCombatHud
         string chargeText = state.ChargeInvalidated ? "Invalid" : $"{state.ChargeMultiplier:0.00}x";
         GUI.Label(
             new Rect(16f, 46f, Screen.width - 32f, 34f),
-            $"Pointer: {state.AttackModeLabel}, Zone: {state.ChargeZoneLabel}, Charge: {chargeText}",
+            $"Mode: {state.AttackModeLabel}, Displacement: {state.DragDistanceLabel}",
+            style);
+        GUI.Label(
+            new Rect(16f, 80f, Screen.width - 32f, 34f),
+            $"Travel charge: {state.ChargeTravelLabel}, Multiplier: {chargeText}",
             style);
     }
 
@@ -229,6 +243,11 @@ public struct PlayerCombatHudSettings
     public float HealthBarSideMargin;
     public float HealthBarWidth;
     public float HealthBarAlpha;
+    public float GestureChargeTravelForMax;
+    public float MinimumAttackDisplacement;
+    public float MediumAttackDisplacement;
+    public float StrongAttackDisplacement;
+    public float MaxAttackDisplacement;
 }
 
 public struct PlayerCombatHudState
@@ -236,11 +255,13 @@ public struct PlayerCombatHudState
     public bool HasPointerPosition;
     public Vector2 LastPointerViewportPosition;
     public string AttackModeLabel;
-    public string ChargeZoneLabel;
+    public string DragDistanceLabel;
+    public string ChargeTravelLabel;
     public bool IsDragging;
     public bool ChargeInvalidated;
     public float ChargeRatio;
     public float ChargeMultiplier;
+    public float DisplacementRatio;
     public float PlayerHealthRatio;
     public bool HasUltimateTarget;
     public Vector2 UltimateTargetViewportPosition;

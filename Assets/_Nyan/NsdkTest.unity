@@ -791,6 +791,74 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _prefabWithRigidbody: {fileID: 7893982696271944567, guid: 891d34131d129c842afe7611b9f92ae3, type: 3}
+--- !u!4 &1923108514
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1923108512}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1923108515
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1923108512}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab8718e02b26653428fa831869d5cdba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  projectileAttack: {fileID: 1923108516}
+  rangedAttackSettings: {fileID: 11400000, guid: 2502ac8a2ecf4187adc06114736a2db8, type: 2}
+  attackModeSplitX: 0.5
+  useDynamicControlCenter: 1
+  chargeCenterViewport: {x: 0.5, y: 0.02}
+  aimViewportPosition: {x: 0.5, y: 0.5}
+  blueRadius: 0.2
+  greenRadius: 0.28
+  yellowRadius: 0.38
+  redRadius: 0.5
+  gestureChargeTravelForMax: 1.2
+  minimumAttackDisplacement: 0.025
+  mediumAttackDisplacement: 0.16
+  strongAttackDisplacement: 0.3
+  attackDisplacementForMax: 0.38
+  minChargeMultiplier: 1
+  maxChargeMultiplier: 3
+  meleeAttack: {fileID: 1923108517}
+  ultimateSettings: {fileID: 11400000, guid: 1183f265508e46b092c581677bdb52c4, type: 2}
+  foxPrefab: {fileID: 6356111818581873192, guid: 6d3b82c7cbdf4b9097c724d3943c4f17, type: 3}
+  ultimateSpawnMinDelay: 2.5
+  ultimateSpawnMaxDelay: 5.5
+  ultimateVisibleDuration: 1.1
+  ultimateTargetRadius: 0.045
+  ultimateOuterMinRadius: 0.545
+  ultimateOuterMaxRadius: 0.545
+  ultimateTargetFanMinAngle: 35
+  ultimateTargetFanMaxAngle: 145
+  ultimateSpawnDistanceFromCamera: 1.1
+  ultimateFoxDamage: 45
+  playerHealth: {fileID: 0}
+  healthBarCenterGap: 0.055
+  healthBarSideMargin: 0.035
+  healthBarWidth: 12
+  healthBarAlpha: 0.72
+  canvasHud: {fileID: 1923108518}
+  logAttacks: 1
+  showDebugOverlay: 0
+  overlaySegments: 96
+  overlayLineWidth: 3
+  chargeFillMaxAlpha: 0.16
 --- !u!114 &1923108516
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -834,71 +902,6 @@ MonoBehaviour:
   slashScale: {x: 1, y: 1, z: 1}
   slashAngle: -25
   logAttacks: 1
---- !u!4 &1923108514
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1923108512}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1923108515
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1923108512}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ab8718e02b26653428fa831869d5cdba, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  projectileAttack: {fileID: 1923108516}
-  rangedAttackSettings: {fileID: 11400000, guid: 2502ac8a2ecf4187adc06114736a2db8, type: 2}
-  meleeAttack: {fileID: 1923108517}
-  attackModeSplitX: 0.5
-  chargeCenterViewport: {x: 0.5, y: 0.02}
-  aimViewportPosition: {x: 0.5, y: 0.5}
-  blueRadius: 0.2
-  greenRadius: 0.28
-  yellowRadius: 0.38
-  redRadius: 0.5
-  chargeDistanceForMax: 6
-  minChargeMultiplier: 1
-  maxChargeMultiplier: 3
-  reverseDirectionDotThreshold: 0.4
-  reverseInvalidationGraceDistance: 0.015
-  ultimateSettings: {fileID: 11400000, guid: 1183f265508e46b092c581677bdb52c4, type: 2}
-  foxPrefab: {fileID: 6356111818581873192, guid: 6d3b82c7cbdf4b9097c724d3943c4f17, type: 3}
-  ultimateSpawnMinDelay: 2.5
-  ultimateSpawnMaxDelay: 5.5
-  ultimateVisibleDuration: 1.1
-  ultimateTargetRadius: 0.045
-  ultimateOuterMinRadius: 0.35
-  ultimateOuterMaxRadius: 0.43
-  ultimateTargetFanMinAngle: 35
-  ultimateTargetFanMaxAngle: 145
-  ultimateSpawnDistanceFromCamera: 1.1
-  ultimateFoxDamage: 45
-  playerHealth: {fileID: 0}
-  healthBarCenterGap: 0.055
-  healthBarSideMargin: 0.035
-  healthBarWidth: 12
-  healthBarAlpha: 0.72
-  canvasHud: {fileID: 1923108518}
-  logAttacks: 1
-  showDebugOverlay: 0
-  overlaySegments: 96
-  overlayLineWidth: 3
-  chargeFillMaxAlpha: 0.16
 --- !u!114 &1923108518
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -913,22 +916,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   canvas: {fileID: 0}
   root: {fileID: 0}
-  meleeIconSprite: {fileID: 0}
-  rangedIconSprite: {fileID: 0}
-  ultimateIconSprite: {fileID: 0}
+  controlRingBaseSprite: {fileID: 21300000, guid: 6609a223381c4fa68bb8e87172625c19, type: 3}
+  meleeIconSprite: {fileID: 21300000, guid: 6e174e70440d4c38afcd7599338dc1e3, type: 3}
+  rangedIconSprite: {fileID: 21300000, guid: 2b8e0dc89cab460894af93704b982bbd, type: 3}
+  powerArrowSprite: {fileID: 21300000, guid: a2acbe620ccd4fbfb78aa235da58d2e6, type: 3}
+  ultimateTargetBaseSprite: {fileID: 0}
+  ultimateIconSprite: {fileID: 21300000, guid: 21729ae0e74c4b518b14b2ec67d1462b, type: 3}
   crosshairSprite: {fileID: 0}
   referenceResolution: {x: 390, y: 844}
-  healthBarOffset: {x: 14, y: -15}
-  healthBarSize: {x: 108, y: 10}
-  iconSize: 50
+  healthBarOffset: {x: 40, y: -45}
+  healthBarSize: {x: 310, y: 30}
+  iconSize: 35
   crosshairSize: 35
+  powerArrowSpriteForwardAngle: 110
+  powerArrowWidthRatio: 0.28
+  powerArrowMinLength: 30
   releaseFlashDuration: 0.26
-  healthBackgroundColor: {r: 0.86, g: 0.86, b: 0.86, a: 0.9}
-  healthFillColor: {r: 0.35, g: 1, b: 0.35, a: 0.96}
+  healthBackgroundColor: {r: 0, g: 0, b: 0, a: 0.53}
+  healthFillColor: {r: 0, g: 1, b: 0.0333333, a: 0.88}
   meleeZoneColor: {r: 1, g: 0.95, b: 0.45, a: 0.45}
   rangedZoneColor: {r: 1, g: 0.36, b: 0.38, a: 0.36}
-  blueZoneColor: {r: 0.46, g: 0.91, b: 1, a: 0.58}
+  blueZoneColor: {r: 0.46, g: 0.91, b: 1, a: 0}
   chargeFillColor: {r: 0.1, g: 0.55, b: 1, a: 0.22}
+  controlRingBaseColor: {r: 1, g: 1, b: 1, a: 1}
+  chargeArcColor: {r: 0.055, g: 0.93, b: 0.075, a: 1}
+  powerArrowColor: {r: 1, g: 1, b: 1, a: 0.8}
+  ultimateBaseColor: {r: 0, g: 0, b: 0, a: 0.57}
+  ultimateRingColor: {r: 1, g: 1, b: 1, a: 0.3}
   meleeFlashColor: {r: 1, g: 0.96, b: 0.3, a: 1}
   rangedFlashColor: {r: 1, g: 0.25, b: 0.35, a: 1}
   ultimateColor: {r: 0.7, g: 0.68, b: 1, a: 0.95}
