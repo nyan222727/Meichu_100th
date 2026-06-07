@@ -17,10 +17,14 @@ public sealed class PlayerChargeControlView : MonoBehaviour
     [SerializeField] private Color chargingColor = new Color(0.35f, 0.84f, 0.77f, 0.92f);
     [SerializeField] private Color hitStunReadyColor = new Color(1f, 0.71f, 0.37f, 0.96f);
     [SerializeField] private Color fullChargeColor = new Color(1f, 0.82f, 0.4f, 1f);
+    [SerializeField, Min(0f)] private float skillReadyPulseSpeed = 6f;
+    [SerializeField, Range(0f, 0.5f)] private float skillReadyBrightness = 0.28f;
+    [SerializeField, Range(0f, 0.2f)] private float skillReadyScaleAmount = 0.06f;
     [SerializeField, Min(0f)] private float fullChargePulseSpeed = 5f;
     [SerializeField, Range(0f, 0.4f)] private float fullChargePulseAmount = 0.16f;
 
     private Color powerArrowBaseColor;
+    private Vector3 chargeArcBaseScale;
     private bool initialized;
     private bool warnedMissingReferences;
 
@@ -46,12 +50,21 @@ public sealed class PlayerChargeControlView : MonoBehaviour
         SetViewportPosition(settings.ChargeCenterViewport, rootSize);
         chargeArc.fillAmount = Mathf.Clamp01(state.ChargeRatio);
         chargeArc.color = GetChargeColor(state.ChargeRatio, settings.HitStunChargeThreshold);
+        UpdateSkillReadyPulse(state.ChargeRatio, settings.HitStunChargeThreshold);
 
         bool melee = state.AttackModeLabel == "Melee";
         meleeIcon.gameObject.SetActive(melee);
         rangedIcon.gameObject.SetActive(!melee);
 
         UpdatePowerArrow(settings, state, rootSize);
+    }
+
+    private void OnDisable()
+    {
+        if (initialized && chargeArc != null)
+        {
+            chargeArc.rectTransform.localScale = chargeArcBaseScale;
+        }
     }
 
     private Color GetChargeColor(float chargeRatio, float hitStunThreshold)
@@ -62,13 +75,46 @@ public sealed class PlayerChargeControlView : MonoBehaviour
             ? Color.Lerp(chargingColor, hitStunReadyColor, ratio / threshold)
             : Color.Lerp(hitStunReadyColor, fullChargeColor, (ratio - threshold) / (1f - threshold));
 
-        if (ratio >= 0.999f)
+        if (ratio >= threshold)
         {
-            float pulse = (Mathf.Sin(Time.unscaledTime * fullChargePulseSpeed) + 1f) * 0.5f;
-            color = Color.Lerp(color, Color.white, pulse * fullChargePulseAmount);
+            float readyPulse = GetPulse(skillReadyPulseSpeed);
+            float brightness = Mathf.Lerp(skillReadyBrightness * 0.45f, skillReadyBrightness, readyPulse);
+
+            if (ratio >= 0.999f)
+            {
+                brightness += GetPulse(fullChargePulseSpeed) * fullChargePulseAmount;
+            }
+
+            color = Color.Lerp(color, Color.white, Mathf.Clamp01(brightness));
+            color.a = 1f;
         }
 
         return color;
+    }
+
+    private void UpdateSkillReadyPulse(float chargeRatio, float hitStunThreshold)
+    {
+        float threshold = Mathf.Clamp(hitStunThreshold, 0.01f, 0.99f);
+        if (chargeRatio < threshold)
+        {
+            chargeArc.rectTransform.localScale = chargeArcBaseScale;
+            return;
+        }
+
+        float pulse = GetPulse(skillReadyPulseSpeed);
+        float scaleAmount = Mathf.Lerp(skillReadyScaleAmount * 0.35f, skillReadyScaleAmount, pulse);
+
+        if (chargeRatio >= 0.999f)
+        {
+            scaleAmount += GetPulse(fullChargePulseSpeed) * skillReadyScaleAmount * 0.45f;
+        }
+
+        chargeArc.rectTransform.localScale = chargeArcBaseScale * (1f + scaleAmount);
+    }
+
+    private static float GetPulse(float speed)
+    {
+        return (Mathf.Sin(Time.unscaledTime * Mathf.Max(0f, speed)) + 1f) * 0.5f;
     }
 
     private bool Initialize()
@@ -84,6 +130,7 @@ public sealed class PlayerChargeControlView : MonoBehaviour
         }
 
         powerArrowBaseColor = powerArrow.color;
+        chargeArcBaseScale = chargeArc.rectTransform.localScale;
         initialized = true;
         return true;
     }

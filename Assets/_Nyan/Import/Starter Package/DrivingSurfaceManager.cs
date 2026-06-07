@@ -18,6 +18,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
 
 public class DrivingSurfaceManager : MonoBehaviour
 {
@@ -38,12 +39,19 @@ public class DrivingSurfaceManager : MonoBehaviour
         }
 
         LockedPlane = arPlane;
-        PlaneManager.planesChanged += DisableNewPlanes;
+        PlaneManager.trackablesChanged.AddListener(DisableNewPlanes);
     }
 
     private void Start()
     {
         PlaneManager = GetComponent<ARPlaneManager>();
+
+        // Gameplay placement only needs a floor. Ignoring vertical and angled
+        // candidates keeps the reticle from jumping between unrelated planes.
+        if (PlaneManager != null)
+        {
+            PlaneManager.requestedDetectionMode = PlaneDetectionMode.Horizontal;
+        }
     }
 
     private void Update()
@@ -54,7 +62,7 @@ public class DrivingSurfaceManager : MonoBehaviour
         }
     }
 
-    private void DisableNewPlanes(ARPlanesChangedEventArgs args)
+    private void DisableNewPlanes(ARTrackablesChangedEventArgs<ARPlane> args)
     {
         foreach (var plane in args.added)
         {
