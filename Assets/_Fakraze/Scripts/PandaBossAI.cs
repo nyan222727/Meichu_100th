@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PandaBossAI : MonoBehaviour
+public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
 {
     [Header("Target")]
     public Transform player;
@@ -18,6 +18,9 @@ public class PandaBossAI : MonoBehaviour
     public int maxHealth = 100;
     public int currentHealth;
     private bool isDead = false;
+
+    public Transform DamageTransform => transform;
+    public bool IsDefeated => isDead;
 
     [Header("Animation")]
     public Animator animator;
@@ -144,6 +147,8 @@ public class PandaBossAI : MonoBehaviour
     private bool hasStartedDeathSink = false;
 
     private bool isAttacking = false;
+    private float hitStunRemaining;
+    private float animatorSpeedBeforeHitStun = 1f;
 
     private PlayerHealth playerHealth;
 
@@ -230,8 +235,10 @@ public class PandaBossAI : MonoBehaviour
     private void Update()
     {
         CheckAnimatorDeadBoolForSink();
+        UpdateHitStun();
 
         if (isDead) return;
+        if (hitStunRemaining > 0f) return;
         if (player == null) return;
 
         UpdateTimers();
@@ -294,6 +301,34 @@ public class PandaBossAI : MonoBehaviour
         if (globalAttackTimer > 0f)
         {
             globalAttackTimer -= Time.deltaTime;
+        }
+    }
+
+    private void UpdateHitStun()
+    {
+        if (hitStunRemaining <= 0f)
+        {
+            return;
+        }
+
+        hitStunRemaining = Mathf.Max(0f, hitStunRemaining - Time.unscaledDeltaTime);
+        if (hitStunRemaining <= 0f && animator != null)
+        {
+            animator.speed = animatorSpeedBeforeHitStun;
+        }
+    }
+
+    private IEnumerator WaitForActiveSeconds(float duration)
+    {
+        float remaining = Mathf.Max(0f, duration);
+        while (remaining > 0f)
+        {
+            if (hitStunRemaining <= 0f)
+            {
+                remaining -= Time.deltaTime;
+            }
+
+            yield return null;
         }
     }
 
@@ -376,7 +411,7 @@ public class PandaBossAI : MonoBehaviour
             clawWarning.Show(clawRange, clawAngle);
         }
 
-        yield return new WaitForSeconds(clawWarningTime);
+        yield return WaitForActiveSeconds(clawWarningTime);
 
         Debug.Log("Panda Boss uses Claw Attack!");
 
@@ -463,7 +498,7 @@ public class PandaBossAI : MonoBehaviour
             soundController.PlayThrowSound();
         }
 
-        yield return new WaitForSeconds(plumWindupTime);
+        yield return WaitForActiveSeconds(plumWindupTime);
 
         Debug.Log("Panda Boss shoots Plum Blossom!");
 
@@ -566,7 +601,7 @@ public class PandaBossAI : MonoBehaviour
         for (int i = 0; i < targetPositions.Count; i++)
         {
             SpawnMeteor(targetPositions[i]);
-            yield return new WaitForSeconds(meteorSpawnDelay);
+            yield return WaitForActiveSeconds(meteorSpawnDelay);
         }
 
         isAttacking = false;
@@ -706,10 +741,13 @@ public class PandaBossAI : MonoBehaviour
     {
         if (isDead) return;
 
+        int previousHealth = currentHealth;
         currentHealth -= damage;
         currentHealth = Mathf.Max(currentHealth, 0);
+        int actualDamage = previousHealth - currentHealth;
 
-        Debug.Log("Panda Boss takes " + damage + " damage. Current HP: " + currentHealth);
+        DamageFeedbackUtility.ShowDamage(this, actualDamage);
+        Debug.Log("Panda Boss takes " + actualDamage + " damage. Current HP: " + currentHealth);
 
         if (currentHealth <= 0)
         {
@@ -725,12 +763,42 @@ public class PandaBossAI : MonoBehaviour
         }
     }
 
+    public void ApplyHitStun(float duration)
+    {
+        if (isDead || duration <= 0f)
+        {
+            return;
+        }
+
+        if (hitStunRemaining <= 0f && animator != null)
+        {
+            animatorSpeedBeforeHitStun = animator.speed;
+        }
+
+        hitStunRemaining = Mathf.Max(hitStunRemaining, duration);
+        if (animator != null)
+        {
+            animator.speed = 0f;
+        }
+    }
+
+    private void ClearHitStun()
+    {
+        hitStunRemaining = 0f;
+        if (animator != null)
+        {
+            animator.speed = animatorSpeedBeforeHitStun;
+        }
+    }
+
     private void Die()
     {
         if (isDead) return;
 
         isDead = true;
         isAttacking = false;
+
+        ClearHitStun();
 
         StopAllCoroutines();
 
@@ -850,7 +918,7 @@ public class PandaBossAI : MonoBehaviour
 
         if (showDelay > 0f)
         {
-            yield return new WaitForSeconds(showDelay);
+            yield return WaitForActiveSeconds(showDelay);
         }
 
         clawWeaponObject.SetActive(true);
@@ -859,7 +927,7 @@ public class PandaBossAI : MonoBehaviour
 
         if (visibleDuration > 0f)
         {
-            yield return new WaitForSeconds(visibleDuration);
+            yield return WaitForActiveSeconds(visibleDuration);
         }
 
         clawWeaponObject.SetActive(false);
