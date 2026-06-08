@@ -20,6 +20,7 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
 
     [Header("Feedback References")]
     [SerializeField] private Image releaseFlash;
+    [SerializeField] private ScreenVignetteGraphic damageVignette;
 
     [Header("Health Bar")]
     [SerializeField] private Color healthyHealthColor = new Color(0.08f, 0.95f, 0.18f, 0.92f);
@@ -29,10 +30,17 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
 
     [Header("Runtime Behaviour")]
     [SerializeField] private float releaseFlashDuration = 0.26f;
+    [SerializeField] private float damageVignetteFlashDuration = 0.42f;
+    [SerializeField] private Color damageVignetteColor = new Color(1f, 0.04f, 0f, 1f);
+    [SerializeField, Range(0f, 1f)] private float damageVignetteFlashAlpha = 0.42f;
+    [SerializeField, Range(0f, 1f)] private float lowHealthVignetteAlpha = 0.24f;
 
     private float releaseFlashStartedAt = -999f;
     private float releaseFlashStrength;
     private Vector2 releaseFlashViewportPosition;
+    private float damageVignetteStartedAt = -999f;
+    private float previousHealthRatio = 1f;
+    private bool hasPreviousHealthRatio;
     private bool warnedMissingReferences;
     private Color ultimateIconBaseColor;
     private Color releaseFlashBaseColor;
@@ -51,6 +59,7 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
     private void OnValidate()
     {
         releaseFlashDuration = Mathf.Max(0.01f, releaseFlashDuration);
+        damageVignetteFlashDuration = Mathf.Max(0.01f, damageVignetteFlashDuration);
     }
 
     public void SetVisible(bool visible)
@@ -71,6 +80,7 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
         }
 
         UpdateHealth(state.PlayerHealthRatio);
+        UpdateDamageVignette(state.PlayerHealthRatio);
         UpdateCrosshair(settings.AimViewportPosition);
         chargeControl.Apply(settings, state, GetRootSize());
         UpdateUltimateTarget(state);
@@ -95,6 +105,38 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
         fillRect.anchorMax = new Vector2(healthRatio, 1f);
         fillRect.offsetMin = Vector2.zero;
         fillRect.offsetMax = Vector2.zero;
+    }
+
+    private void UpdateDamageVignette(float healthRatio)
+    {
+        healthRatio = Mathf.Clamp01(healthRatio);
+        if (!hasPreviousHealthRatio)
+        {
+            previousHealthRatio = healthRatio;
+            hasPreviousHealthRatio = true;
+        }
+
+        if (healthRatio < previousHealthRatio - 0.001f)
+        {
+            damageVignetteStartedAt = Time.unscaledTime;
+        }
+
+        previousHealthRatio = healthRatio;
+
+        float flashAge = Time.unscaledTime - damageVignetteStartedAt;
+        float flash = flashAge >= 0f && flashAge <= damageVignetteFlashDuration
+            ? 1f - (flashAge / damageVignetteFlashDuration)
+            : 0f;
+        float lowHealth = Mathf.InverseLerp(0.55f, 0.16f, healthRatio);
+        float intensity = Mathf.Clamp01(
+            flash * damageVignetteFlashAlpha
+            + lowHealth * lowHealthVignetteAlpha);
+
+        damageVignette.gameObject.SetActive(intensity > 0.01f);
+        if (intensity > 0.01f)
+        {
+            damageVignette.SetIntensity(damageVignetteColor, intensity);
+        }
     }
 
     private Color GetHealthColor(float healthRatio)
@@ -163,7 +205,8 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
             && ultimateTargetBackground != null
             && ultimateTargetRing != null
             && ultimateTargetIcon != null
-            && releaseFlash != null;
+            && releaseFlash != null
+            && damageVignette != null;
 
         if (!valid && !warnedMissingReferences)
         {

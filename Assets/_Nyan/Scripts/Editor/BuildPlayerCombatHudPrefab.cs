@@ -39,7 +39,7 @@ public static class BuildPlayerCombatHudPrefab
         Sprite ringSprite = LoadSprite("Assets/_Nyan/UI/Icons/MeleeBaseRing.png");
         Sprite ultimateSprite = LoadSprite("Assets/_Nyan/UI/Icons/UltimateFoxIcon.png");
         Sprite circleSprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
-        GameObject chargeControlPrefab = GetOrCreateChargeControlPrefab();
+        GameObject chargeControlPrefab = RebuildChargeControlPrefab();
         if (chargeControlPrefab == null)
         {
             return;
@@ -64,6 +64,10 @@ public static class BuildPlayerCombatHudPrefab
 
         RectTransform content = CreateRect("Content", prefabSource.transform);
         Stretch(content);
+
+        ScreenVignetteGraphic damageVignette = CreateVignette("Damage Vignette", content);
+        Stretch(damageVignette.rectTransform);
+        damageVignette.gameObject.SetActive(false);
 
         Image healthBackground = CreateImage("Health Bar", content, null, new Color(0f, 0f, 0f, 0.53f));
         SetTopCenter(healthBackground.rectTransform, new Vector2(0f, -45f), new Vector2(310f, 30f));
@@ -144,7 +148,8 @@ public static class BuildPlayerCombatHudPrefab
             ultimateBackground,
             ultimateRing,
             ultimateIcon,
-            releaseFlash);
+            releaseFlash,
+            damageVignette);
 
         GameplayPauseMenuController pauseController = prefabSource.GetComponent<GameplayPauseMenuController>();
         AssignPauseReferences(
@@ -177,25 +182,23 @@ public static class BuildPlayerCombatHudPrefab
     [MenuItem(OpenChargeControlMenuPath)]
     public static void OpenChargeControlPrefab()
     {
-        GameObject prefab = GetOrCreateChargeControlPrefab();
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(ChargeControlPrefabPath);
+        if (prefab == null)
+        {
+            prefab = RebuildChargeControlPrefab();
+        }
+
         if (prefab != null)
         {
             AssetDatabase.OpenAsset(prefab);
         }
     }
 
-    private static GameObject GetOrCreateChargeControlPrefab()
+    private static GameObject RebuildChargeControlPrefab()
     {
-        GameObject existingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ChargeControlPrefabPath);
-        if (existingPrefab != null)
-        {
-            return existingPrefab;
-        }
-
         Sprite ringSprite = LoadSprite("Assets/_Nyan/UI/Icons/MeleeBaseRing.png");
         Sprite meleeSprite = LoadSprite("Assets/_Nyan/UI/Icons/MeleeKnifeIcon.png");
         Sprite rangedSprite = LoadSprite("Assets/_Nyan/UI/Icons/BowIcon.png");
-        Sprite arrowSprite = LoadSprite("Assets/_Nyan/UI/Icons/PowerArrow.png");
 
         GameObject prefabSource = new GameObject(
             "PlayerChargeControl",
@@ -239,13 +242,9 @@ public static class BuildPlayerCombatHudPrefab
 
         RectTransform powerArrowPivot = CreateRect("Displacement Arrow Pivot", root);
         SetCenter(powerArrowPivot, Vector2.zero, Vector2.zero);
-        Image powerArrow = CreateImage("Displacement Arrow", powerArrowPivot, arrowSprite, Color.white);
-        powerArrow.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
-        powerArrow.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-        powerArrow.rectTransform.pivot = new Vector2(0f, 0.5f);
-        powerArrow.rectTransform.anchoredPosition = new Vector2(52f, 0f);
-        powerArrow.rectTransform.sizeDelta = new Vector2(133f, 44.82f);
-        powerArrow.preserveAspect = false;
+        PowerArrowGraphic powerArrow = CreatePowerArrow("Power Arrow", powerArrowPivot);
+        powerArrow.SetArrow(80f, 14f, 44f, 42f, 0.3f);
+        powerArrow.gameObject.SetActive(false);
 
         PlayerChargeControlView view = prefabSource.GetComponent<PlayerChargeControlView>();
         SerializedObject serializedView = new SerializedObject(view);
@@ -346,7 +345,8 @@ public static class BuildPlayerCombatHudPrefab
         Image ultimateBackground,
         Image ultimateRing,
         Image ultimateIcon,
-        Image releaseFlash)
+        Image releaseFlash,
+        ScreenVignetteGraphic damageVignette)
     {
         SerializedObject serializedHud = new SerializedObject(hud);
         SetReference(serializedHud, "root", content);
@@ -359,6 +359,7 @@ public static class BuildPlayerCombatHudPrefab
         SetReference(serializedHud, "ultimateTargetRing", ultimateRing);
         SetReference(serializedHud, "ultimateTargetIcon", ultimateIcon);
         SetReference(serializedHud, "releaseFlash", releaseFlash);
+        SetReference(serializedHud, "damageVignette", damageVignette);
         serializedHud.ApplyModifiedPropertiesWithoutUndo();
     }
 
@@ -422,6 +423,34 @@ public static class BuildPlayerCombatHudPrefab
         text.alignment = TextAnchor.MiddleCenter;
 
         return button;
+    }
+
+    private static PowerArrowGraphic CreatePowerArrow(string name, Transform parent)
+    {
+        GameObject arrowObject = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(PowerArrowGraphic));
+        arrowObject.transform.SetParent(parent, false);
+
+        RectTransform rectTransform = arrowObject.GetComponent<RectTransform>();
+        rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        rectTransform.pivot = new Vector2(0f, 0.5f);
+        rectTransform.anchoredPosition = Vector2.zero;
+        rectTransform.sizeDelta = new Vector2(80f, 80f);
+
+        PowerArrowGraphic arrow = arrowObject.GetComponent<PowerArrowGraphic>();
+        arrow.raycastTarget = false;
+        return arrow;
+    }
+
+    private static ScreenVignetteGraphic CreateVignette(string name, Transform parent)
+    {
+        GameObject vignetteObject = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(ScreenVignetteGraphic));
+        vignetteObject.transform.SetParent(parent, false);
+
+        ScreenVignetteGraphic vignette = vignetteObject.GetComponent<ScreenVignetteGraphic>();
+        vignette.raycastTarget = false;
+        vignette.SetIntensity(new Color(1f, 0.05f, 0f, 1f), 0f);
+        return vignette;
     }
 
     private static Text CreateText(string name, Transform parent, string textValue, Color color, int fontSize)

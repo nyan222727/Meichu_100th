@@ -8,10 +8,14 @@ public sealed class PlayerChargeControlView : MonoBehaviour
     [SerializeField] private Image meleeIcon;
     [SerializeField] private Image rangedIcon;
     [SerializeField] private RectTransform powerArrowPivot;
-    [SerializeField] private Image powerArrow;
+    [SerializeField] private PowerArrowGraphic powerArrow;
 
     [Header("Runtime Behaviour")]
     [SerializeField] private float powerArrowSpriteForwardAngle;
+    [SerializeField, Min(1f)] private float powerArrowHeadLength = 44f;
+    [SerializeField, Min(1f)] private float powerArrowBodyThickness = 14f;
+    [SerializeField, Range(10f, 75f)] private float powerArrowHeadAngle = 42f;
+    [SerializeField, Range(0f, 1f)] private float powerArrowAlpha = 0.3f;
 
     [Header("Charge Feedback")]
     [SerializeField] private Color chargingColor = new Color(0.35f, 0.84f, 0.77f, 0.92f);
@@ -23,7 +27,6 @@ public sealed class PlayerChargeControlView : MonoBehaviour
     [SerializeField, Min(0f)] private float fullChargePulseSpeed = 5f;
     [SerializeField, Range(0f, 0.4f)] private float fullChargePulseAmount = 0.16f;
 
-    private Color powerArrowBaseColor;
     private Vector3 chargeArcBaseScale;
     private bool initialized;
     private bool warnedMissingReferences;
@@ -129,10 +132,19 @@ public sealed class PlayerChargeControlView : MonoBehaviour
             return false;
         }
 
-        powerArrowBaseColor = powerArrow.color;
+        ConfigurePowerArrowStyle();
         chargeArcBaseScale = chargeArc.rectTransform.localScale;
         initialized = true;
         return true;
+    }
+
+    private void ConfigurePowerArrowStyle()
+    {
+        if (powerArrow != null)
+        {
+            powerArrow.raycastTarget = false;
+            powerArrow.SetArrow(0f, powerArrowBodyThickness, powerArrowHeadLength, powerArrowHeadAngle, powerArrowAlpha);
+        }
     }
 
     private void UpdatePowerArrow(
@@ -147,10 +159,11 @@ public sealed class PlayerChargeControlView : MonoBehaviour
         float triggerDistance = settings.MinimumAttackDisplacement * radiusScale;
         float arrowLength = delta.magnitude - triggerDistance;
 
-        powerArrow.gameObject.SetActive(
+        bool shouldShowArrow =
             arrowLength > 0.01f
-            && delta.sqrMagnitude > 0.01f);
-        if (!powerArrow.gameObject.activeSelf)
+            && delta.sqrMagnitude > 0.01f;
+        SetPowerArrowVisible(shouldShowArrow);
+        if (!shouldShowArrow)
         {
             return;
         }
@@ -159,13 +172,15 @@ public sealed class PlayerChargeControlView : MonoBehaviour
         powerArrowPivot.anchoredPosition = direction * triggerDistance;
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
         powerArrowPivot.localEulerAngles = new Vector3(0f, 0f, angle - powerArrowSpriteForwardAngle);
+        powerArrow.SetArrow(arrowLength, powerArrowBodyThickness, powerArrowHeadLength, powerArrowHeadAngle, powerArrowAlpha);
+    }
 
-        RectTransform arrowRect = powerArrow.rectTransform;
-        arrowRect.sizeDelta = new Vector2(arrowLength, arrowRect.sizeDelta.y);
-
-        Color color = powerArrowBaseColor;
-        color.a *= Mathf.Lerp(0.18f, 1f, Mathf.Clamp01(state.DisplacementRatio));
-        powerArrow.color = color;
+    private void SetPowerArrowVisible(bool visible)
+    {
+        if (powerArrow != null)
+        {
+            powerArrow.gameObject.SetActive(visible);
+        }
     }
 
     private void SetViewportPosition(Vector2 viewportPosition, Vector2 rootSize)
