@@ -14,8 +14,14 @@ public class QuizData
 public class QuizManager : MonoBehaviour
 {
     [Header("測試設定")]
+    public bool autoStartQuestions = false;
     public float questionInterval = 8f;
     public float answerTimeLimit = 5f;
+
+    [Header("玩家懲罰")]
+    public PlayerHealth playerHealth;
+    public int wrongAnswerDamage = 10;
+    public int timeoutDamage = 15;
 
     [Header("UI 綁定區塊")]
     public GameObject quizPanel;
@@ -31,11 +37,25 @@ public class QuizManager : MonoBehaviour
     private QuizData currentQuiz;
     private Coroutine timeoutCoroutine;
     private bool isAnswering = false;
+    private PlayerHealth activeDamageTarget;
+    private int activeWrongAnswerDamage;
+    private int activeTimeoutDamage;
+
+    public bool IsAnswering => isAnswering;
 
     private void Start()
     {
-        quizPanel.SetActive(false);
-        StartCoroutine(TestQuizRoutine());
+        ResolvePlayerHealth();
+
+        if (quizPanel != null)
+        {
+            quizPanel.SetActive(false);
+        }
+
+        if (autoStartQuestions)
+        {
+            StartCoroutine(TestQuizRoutine());
+        }
     }
 
     private IEnumerator TestQuizRoutine()
@@ -49,7 +69,28 @@ public class QuizManager : MonoBehaviour
 
     public void TriggerNewQuiz()
     {
+        TryTriggerNewQuiz();
+    }
+
+    public bool TryTriggerNewQuiz(
+        PlayerHealth damageTarget = null,
+        int wrongAnswerDamageOverride = -1,
+        int timeoutDamageOverride = -1)
+    {
+        if (isAnswering)
+        {
+            return false;
+        }
+
+        if (!ValidateReferences())
+        {
+            return false;
+        }
+
         isAnswering = true;
+        activeDamageTarget = damageTarget != null ? damageTarget : ResolvePlayerHealth();
+        activeWrongAnswerDamage = wrongAnswerDamageOverride >= 0 ? wrongAnswerDamageOverride : wrongAnswerDamage;
+        activeTimeoutDamage = timeoutDamageOverride >= 0 ? timeoutDamageOverride : timeoutDamage;
         currentQuiz = GenerateMathQuiz();
 
         // 🌟 恢復顯示：打開黑幕背景與卷軸面板
@@ -58,7 +99,7 @@ public class QuizManager : MonoBehaviour
         questionBoardUI.SetActive(true);
 
         feedbackTextUI.gameObject.SetActive(false);
-        foreach (var btn in optionButtons) btn.interactable = true;
+        SetOptionButtonsInteractable(true);
 
         questionTextUI.text = currentQuiz.QuestionText;
         for (int i = 0; i < 3; i++)
@@ -74,6 +115,7 @@ public class QuizManager : MonoBehaviour
 
         if (timeoutCoroutine != null) StopCoroutine(timeoutCoroutine);
         timeoutCoroutine = StartCoroutine(TimeoutRoutine());
+        return true;
     }
 
     private void OnOptionSelected(int selectedIndex)
@@ -84,11 +126,14 @@ public class QuizManager : MonoBehaviour
         if (selectedIndex == currentQuiz.CorrectOptionIndex)
         {
             Debug.Log("<color=green>答對了！</color>");
+            SetOptionButtonsInteractable(false);
             StartCoroutine(ShowFeedbackAndClose("答對了", Color.green));
         }
         else
         {
             Debug.Log("<color=red>答錯了！</color>");
+            SetOptionButtonsInteractable(false);
+            ApplyPenalty(activeWrongAnswerDamage);
             StartCoroutine(ShowFeedbackAndClose("答錯了", Color.red));
         }
     }
@@ -105,6 +150,8 @@ public class QuizManager : MonoBehaviour
 
         timerTextUI.text = "0";
         Debug.Log("<color=orange>超時未作答！</color>");
+        SetOptionButtonsInteractable(false);
+        ApplyPenalty(activeTimeoutDamage);
         StartCoroutine(ShowFeedbackAndClose("爛透了", new Color(1f, 0.5f, 0f)));
     }
 
@@ -136,7 +183,88 @@ public class QuizManager : MonoBehaviour
     private void CloseQuiz()
     {
         isAnswering = false;
-        quizPanel.SetActive(false);
+        activeDamageTarget = null;
+
+        if (quizPanel != null)
+        {
+            quizPanel.SetActive(false);
+        }
+    }
+
+    private PlayerHealth ResolvePlayerHealth()
+    {
+        if (playerHealth != null)
+        {
+            return playerHealth;
+        }
+
+        playerHealth = FindFirstObjectByType<PlayerHealth>();
+        return playerHealth;
+    }
+
+    private void ApplyPenalty(int damage)
+    {
+        if (damage <= 0)
+        {
+            return;
+        }
+
+        PlayerHealth target = activeDamageTarget != null ? activeDamageTarget : ResolvePlayerHealth();
+        if (target == null)
+        {
+            Debug.LogWarning("[QuizManager] PlayerHealth is missing. Quiz penalty was skipped.");
+            return;
+        }
+
+        target.TakeDamage(damage);
+    }
+
+    private void SetOptionButtonsInteractable(bool interactable)
+    {
+        if (optionButtons == null)
+        {
+            return;
+        }
+
+        foreach (Button button in optionButtons)
+        {
+            if (button != null)
+            {
+                button.interactable = interactable;
+            }
+        }
+    }
+
+    private bool ValidateReferences()
+    {
+        bool valid = quizPanel != null
+            && questionBoardUI != null
+            && questionTextUI != null
+            && optionTextsUI != null
+            && optionTextsUI.Length >= 3
+            && optionButtons != null
+            && optionButtons.Length >= 3
+            && timerTextUI != null
+            && feedbackTextUI != null;
+
+        if (valid)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                valid = optionTextsUI[i] != null && optionButtons[i] != null;
+                if (!valid)
+                {
+                    break;
+                }
+            }
+        }
+
+        if (!valid)
+        {
+            Debug.LogWarning("[QuizManager] Quiz UI references are incomplete.");
+        }
+
+        return valid;
     }
 
     private QuizData GenerateMathQuiz()

@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3045970205667349947}
   - component: {fileID: 660938908248802386}
   - component: {fileID: 7893982696271944567}
+  - component: {fileID: -1458804472699938277}
   m_Layer: 0
   m_Name: LauncherSphere
   m_TagString: Untagged
@@ -131,8 +132,21 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 1
+  m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 2
+--- !u!114 &-1458804472699938277
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5840772337227632140}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f6b82f4e00c9954caed50621d2dfacb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  windEffectMultiplier: 5

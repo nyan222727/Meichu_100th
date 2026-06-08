@@ -101,6 +101,14 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
     public int meteorTargetSearchAttempts = 30;
     public LayerMask groundLayer;
 
+    [Header("Quiz Attack")]
+    public bool enableQuizAttack = true;
+    public QuizManager quizManager;
+    public float quizRange = 8.0f;
+    public float quizWindupTime = 0.35f;
+    public int quizWrongAnswerDamage = 10;
+    public int quizTimeoutDamage = 15;
+
     [Header("Individual Attack Cooldown")]
     [Tooltip("Claw 自己的冷卻時間。Claw 冷卻中時，只有 Claw 不能放。")]
     public float clawCooldown = 2.0f;
@@ -111,6 +119,9 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
     [Tooltip("Meteor 自己的冷卻時間。Meteor 冷卻中時，只有 Meteor 不能放。")]
     public float meteorCooldown = 6.0f;
 
+    [Tooltip("Quiz 自己的冷卻時間。Quiz 冷卻中時，只有 Quiz 不能放。")]
+    public float quizCooldown = 10.0f;
+
     [Header("Global Attack Cooldown")]
     [Tooltip("Claw 攻擊結束後，幾秒內不能進行任何攻擊。")]
     public float globalCooldownAfterClaw = 0.5f;
@@ -120,6 +131,9 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
 
     [Tooltip("Meteor 攻擊結束後，幾秒內不能進行任何攻擊。")]
     public float globalCooldownAfterMeteor = 1.2f;
+
+    [Tooltip("Quiz 題目出現後，幾秒內不能進行任何攻擊。")]
+    public float globalCooldownAfterQuiz = 1.0f;
 
     [Header("Death Sink")]
     [Tooltip("死亡時要下沉的物件。建議指定 PandaBoss 最外層物件，或一個不會被 Animator 控制的 Parent。")]
@@ -140,6 +154,7 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
     private float clawTimer = 0f;
     private float plumTimer = 0f;
     private float meteorTimer = 0f;
+    private float quizTimer = 0f;
     private float globalAttackTimer = 0f;
 
     private Coroutine deadSinkCoroutine;
@@ -149,6 +164,7 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
     private bool isAttacking = false;
     private float hitStunRemaining;
     private float animatorSpeedBeforeHitStun = 1f;
+    private bool warnedMissingQuizManager;
 
     private PlayerHealth playerHealth;
 
@@ -231,6 +247,8 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
         {
             clawWeaponObject.SetActive(false);
         }
+
+        ResolveQuizManager(false);
     }
     private void Update()
     {
@@ -273,6 +291,12 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
             return;
         }
 
+        // 數學題攻擊：Boss 叫出題目 UI，答錯或超時會扣玩家血。
+        if (distance <= quizRange && TryQuizAttack())
+        {
+            return;
+        }
+
         // 中距離使用 Plum
         if (distance <= plumRange)
         {
@@ -296,6 +320,11 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
         if (meteorTimer > 0f)
         {
             meteorTimer -= Time.deltaTime;
+        }
+
+        if (quizTimer > 0f)
+        {
+            quizTimer -= Time.deltaTime;
         }
 
         if (globalAttackTimer > 0f)
@@ -474,6 +503,74 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
         }
 
         return forward.normalized;
+    }
+
+    private bool TryQuizAttack()
+    {
+        if (!enableQuizAttack) return false;
+        if (quizTimer > 0f) return false;
+        if (globalAttackTimer > 0f) return false;
+        if (!ResolveQuizManager(true)) return false;
+        if (quizManager.IsAnswering) return false;
+
+        quizTimer = Mathf.Max(quizCooldown, 0f);
+        StartCoroutine(QuizAttackRoutine());
+        return true;
+    }
+
+    private IEnumerator QuizAttackRoutine()
+    {
+        isAttacking = true;
+
+        Debug.Log("Panda Boss prepares Quiz Attack!");
+
+        PlayRandomCastAnimation();
+
+        if (soundController != null)
+        {
+            soundController.PlayCastSound();
+        }
+
+        yield return WaitForActiveSeconds(quizWindupTime);
+
+        if (ResolveQuizManager(true))
+        {
+            bool started = quizManager.TryTriggerNewQuiz(
+                playerHealth,
+                quizWrongAnswerDamage,
+                quizTimeoutDamage
+            );
+
+            if (!started)
+            {
+                Debug.Log("Panda Boss Quiz Attack skipped because quiz is already active or UI references are missing.");
+            }
+        }
+
+        isAttacking = false;
+        StartGlobalCooldown(globalCooldownAfterQuiz);
+    }
+
+    private bool ResolveQuizManager(bool logIfMissing)
+    {
+        if (quizManager != null)
+        {
+            return true;
+        }
+
+        quizManager = FindFirstObjectByType<QuizManager>(FindObjectsInactive.Include);
+        if (quizManager != null)
+        {
+            return true;
+        }
+
+        if (logIfMissing && !warnedMissingQuizManager)
+        {
+            warnedMissingQuizManager = true;
+            Debug.LogWarning("PandaBossAI: QuizManager not found. Quiz Attack is skipped.");
+        }
+
+        return false;
     }
 
     private void TryPlumAttack()
