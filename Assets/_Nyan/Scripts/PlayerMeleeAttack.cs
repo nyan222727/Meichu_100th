@@ -105,6 +105,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
         {
             bool isFinalHit = hitIndex == hitCount - 1;
+            GameAudioController.PlayKnife();
             PlaySlashVisual(attackPosition, attackRotation, hitIndex);
             DamageTargetsAtPosition(
                 attackPosition,

@@ -55,6 +55,8 @@ public class PlayerProjectileAttack : MonoBehaviour
 
         projectileDamage.Configure(damage, appliesHitStun, hitStunDuration);
         projectile.AddForce(sourceCamera.transform.forward * impulse, ForceMode.Impulse);
+        GameAudioController.PlayShoot();
+
         if (projectileLifetime > 0f)
         {
             Destroy(projectileObject, projectileLifetime);

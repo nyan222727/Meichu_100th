@@ -62,6 +62,7 @@ public class PlayerHealth : MonoBehaviour, IPlayerDamageReceiver, IPlayerStatus
         }
 
         Damaged?.Invoke(actualDamage);
+        GameAudioController.PlayPlayerHurt();
 
         if (vibrateOnDamage && actualDamage >= minDamageForVibration)
         {

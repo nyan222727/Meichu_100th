@@ -145,6 +145,8 @@ public class PlayerCombatController : MonoBehaviour
         {
             canvasHud.SetVisible(true);
         }
+
+        GameAudioController.PlayGameMusic();
         activeChargeCenterViewport = chargeCenterViewport;
         ResetInputState();
         ultimate.ScheduleNextTarget(GetUltimateConfig());
@@ -156,6 +158,8 @@ public class PlayerCombatController : MonoBehaviour
         {
             canvasHud.SetVisible(false);
         }
+
+        GameAudioController.StopStrengthLoop();
     }
 
     public void SetPlayerHealth(int currentHealth, int maxHealth)
@@ -188,6 +192,7 @@ public class PlayerCombatController : MonoBehaviour
 
         ultimate.UpdateTarget(chargeCenterViewport, GetChargeRadiusScale(), GetUltimateConfig(), logAttacks);
         HandlePointerInput();
+        UpdateStrengthAudio();
         UpdateCanvasHud();
     }
 
@@ -407,6 +412,17 @@ public class PlayerCombatController : MonoBehaviour
             damage,
             appliesHitStun,
             hitStunDuration);
+    }
+
+    private void UpdateStrengthAudio()
+    {
+        if (isDragging && currentAttackMode == AttackMode.Ranged && charge.Ratio > 0.01f)
+        {
+            GameAudioController.StartStrengthLoop();
+            return;
+        }
+
+        GameAudioController.StopStrengthLoop();
     }
 
     private void EnsureProjectileAttack()
@@ -658,6 +674,7 @@ public class PlayerCombatController : MonoBehaviour
         currentAttackMode = AttackMode.None;
         activeChargeCenterViewport = chargeCenterViewport;
         charge.Reset(minChargeMultiplier);
+        GameAudioController.StopStrengthLoop();
     }
 
     private void OnGUI()

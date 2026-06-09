@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d2ad2f70c2e41b9b4ee5a4f9e992d1c, type: 3}
+  m_Name: GameAudioLibrary
+  m_EditorClassIdentifier: 
+  playerHurtClip: {fileID: 8300000, guid: f27d40226527dcf469eae1bdc2066e9a, type: 3}
+  questionClip: {fileID: 8300000, guid: 0a8f96b4e40dbaa4d8af38f9d0298009, type: 3}
+  wrongQuestionClip: {fileID: 8300000, guid: 3ed3eba3cebbda34ca5e348f434f4f47, type: 3}
+  shootClip: {fileID: 8300000, guid: 8d35af0c261aad347bd5c22b0d3c51b4, type: 3}
+  knifeClip: {fileID: 8300000, guid: a07dbf0e8a5f42e469a23b77179bd18b, type: 3}
+  strengthClip: {fileID: 8300000, guid: 211e14c639f8ae244aef9e614aea7cb2, type: 3}
+  windClip: {fileID: 8300000, guid: 9e75482437f0f1145a9744616822c180, type: 3}
+  menuMusicClip: {fileID: 8300000, guid: f453a24410fd9ef41bacef5f8ca98dff, type: 3}
+  gameMusicClip: {fileID: 8300000, guid: 22c41bf5fa9ae314b8fedc8499f10cec, type: 3}
+  victoryMusicClip: {fileID: 8300000, guid: 02d44a9568f1d5046a5b52ecef23c904, type: 3}
+  sfxVolume: 1
+  strengthVolume: 0.65
+  windVolume: 0.45
+  musicVolume: 0.55

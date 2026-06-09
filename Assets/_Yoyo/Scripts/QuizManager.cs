@@ -92,6 +92,7 @@ public class QuizManager : MonoBehaviour
         activeWrongAnswerDamage = wrongAnswerDamageOverride >= 0 ? wrongAnswerDamageOverride : wrongAnswerDamage;
         activeTimeoutDamage = timeoutDamageOverride >= 0 ? timeoutDamageOverride : timeoutDamage;
         currentQuiz = GenerateMathQuiz();
+        GameAudioController.PlayQuestion();
 
         // 🌟 恢復顯示：打開黑幕背景與卷軸面板
         if (quizPanel.GetComponent<Image>() != null)
@@ -133,6 +134,7 @@ public class QuizManager : MonoBehaviour
         {
             Debug.Log("<color=red>答錯了！</color>");
             SetOptionButtonsInteractable(false);
+            GameAudioController.PlayWrongQuestion();
             ApplyPenalty(activeWrongAnswerDamage);
             StartCoroutine(ShowFeedbackAndClose("答錯了", Color.red));
         }
@@ -151,6 +153,7 @@ public class QuizManager : MonoBehaviour
         timerTextUI.text = "0";
         Debug.Log("<color=orange>超時未作答！</color>");
         SetOptionButtonsInteractable(false);
+        GameAudioController.PlayWrongQuestion();
         ApplyPenalty(activeTimeoutDamage);
         StartCoroutine(ShowFeedbackAndClose("爛透了", new Color(1f, 0.5f, 0f)));
     }

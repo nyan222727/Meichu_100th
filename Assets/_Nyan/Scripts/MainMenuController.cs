@@ -31,6 +31,7 @@ public class MainMenuController : MonoBehaviour
         }
 
         ShowMainMenu();
+        GameAudioController.PlayMenuMusic();
     }
 
     private void OnDestroy()

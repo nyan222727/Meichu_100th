@@ -10,13 +10,13 @@ public class WindVFXController : MonoBehaviour
     public ParticleSystem swirlWindPS;
 
     [Header("Target Point Near Camera")]
-    [Tooltip("風要吹過 Camera 前方幾公尺")]
+    [Tooltip("風要吹過 Camera 前方幾公尺，只看 Camera 的 Y 軸方向")]
     public float targetDistanceInFrontOfCamera = 1f;
 
-    [Tooltip("目標點相對 Camera 的左右偏移")]
+    [Tooltip("目標點相對 Camera 的左右偏移，只看 Camera 的 Y 軸方向")]
     public float targetHorizontalOffset = 0f;
 
-    [Tooltip("目標點相對 Camera 的上下偏移")]
+    [Tooltip("目標點相對世界座標的上下偏移")]
     public float targetVerticalOffset = 0f;
 
     [Tooltip("普通風時，Particle System 放在逆風方向距離目標點多遠")]
@@ -108,7 +108,7 @@ public class WindVFXController : MonoBehaviour
 
         Vector3 targetWorldPosition = GetTargetWorldPosition();
 
-        // Particle 放在逆風方向，但目標點是 Camera 當前面向前方 1 公尺
+        // Particle 放在逆風方向
         Vector3 particlePosition =
             targetWorldPosition - windDirection * currentUpwindDistance;
 
@@ -117,10 +117,18 @@ public class WindVFXController : MonoBehaviour
 
     Vector3 GetTargetWorldPosition()
     {
+        // 只取 Camera 的 Y 軸旋轉
+        // 忽略 Camera 的 X 軸抬頭/低頭，以及 Z 軸歪斜
+        float cameraYaw = cameraTransform.eulerAngles.y;
+        Quaternion yawRotation = Quaternion.Euler(0f, cameraYaw, 0f);
+
+        Vector3 yawForward = yawRotation * Vector3.forward;
+        Vector3 yawRight = yawRotation * Vector3.right;
+
         return cameraTransform.position
-            + cameraTransform.forward * targetDistanceInFrontOfCamera
-            + cameraTransform.right * targetHorizontalOffset
-            + cameraTransform.up * targetVerticalOffset;
+            + yawForward * targetDistanceInFrontOfCamera
+            + yawRight * targetHorizontalOffset
+            + Vector3.up * targetVerticalOffset;
     }
 
     void RotateParticleByWindDirection()
@@ -214,21 +222,18 @@ public class WindVFXController : MonoBehaviour
 
         Vector3 targetWorldPosition = GetTargetWorldPosition();
 
-        // 綠色：WindManager 的世界風向
         Debug.DrawRay(
             targetWorldPosition,
             windDirection * 2f,
             Color.green
         );
 
-        // 紅色：Particle System 目前面向方向
         Debug.DrawRay(
             swirlWindPS.transform.position,
             swirlWindPS.transform.forward * 2f,
             Color.red
         );
 
-        // 黃色：Particle 位置到 Camera 前方目標點
         Debug.DrawLine(
             swirlWindPS.transform.position,
             targetWorldPosition,

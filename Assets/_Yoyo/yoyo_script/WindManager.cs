@@ -102,6 +102,7 @@ public class WindManager : MonoBehaviour
 
         currentWindForce = windDirection * forceMagnitude;
         isWindActive = true;
+        GameAudioController.StartWindLoop();
 
         if (isTyphoon)
         {

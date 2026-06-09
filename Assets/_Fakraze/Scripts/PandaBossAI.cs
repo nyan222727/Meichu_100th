@@ -935,6 +935,7 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
             soundController.PlayDeathSound();
         }
 
+        GameAudioController.PlayVictoryMusic();
         Debug.Log("Panda Boss died!");
     }
 
@@ -967,6 +968,7 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
                 soundController.PlayDeathSound();
             }
 
+            GameAudioController.PlayVictoryMusic();
             Debug.Log("Panda Boss dead sink triggered by Animator Dead bool.");
         }
     }

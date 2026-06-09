@@ -199,12 +199,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   audioSource: {fileID: 1547903377068992917}
-  clawSound: {fileID: 8300000, guid: f85c05cb8fb367b478f8dbda9ac7ee50, type: 3}
-  throwSound: {fileID: 8300000, guid: e39a31bda88a7d94ca9972d9ea17fd74, type: 3}
-  castSound: {fileID: 8300000, guid: f85c05cb8fb367b478f8dbda9ac7ee50, type: 3}
-  hitSound: {fileID: 8300000, guid: f85c05cb8fb367b478f8dbda9ac7ee50, type: 3}
-  deathSound: {fileID: 8300000, guid: e39a31bda88a7d94ca9972d9ea17fd74, type: 3}
-  clawSoundDelay: 0
+  clawSound: {fileID: 8300000, guid: 9df33475b7e55b84e97848623eea3b45, type: 3}
+  throwSound: {fileID: 8300000, guid: 41437eb4891e95a458ed130d2d1fdbab, type: 3}
+  castSound: {fileID: 8300000, guid: 7b0ce20bd5758ec43b476e00018235c3, type: 3}
+  hitSound: {fileID: 0}
+  deathSound: {fileID: 8300000, guid: a34c66ae5f81ae64ca52d5ac283d9a49, type: 3}
+  clawSoundDelay: 2
   throwSoundDelay: 0.6
   castSoundDelay: 0
   hitSoundDelay: 0
@@ -477,6 +477,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3394315267519031890}
     m_Modifications:
+    - target: {fileID: 4992085730446219505, guid: 2e053bbf6f0f2ae48b8df72bb220ff32, type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4992085730446219505, guid: 2e053bbf6f0f2ae48b8df72bb220ff32, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 5ea6b053eaaf7cd478241b45c068db48, type: 2}
     - target: {fileID: 5063853991671748973, guid: 2e053bbf6f0f2ae48b8df72bb220ff32, type: 3}
       propertyPath: m_LocalPosition.x
       value: -2.15
