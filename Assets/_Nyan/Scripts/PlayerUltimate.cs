@@ -1,20 +1,46 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public sealed class PlayerUltimate
 {
+    private readonly List<float> scheduledTargetTimes = new List<float>();
+
     private bool hasTarget;
     private float nextTargetTime;
     private float targetExpiresAt;
     private Vector2 targetViewportPosition;
+    private bool scheduleInitialized;
+    private int nextScheduledTargetIndex;
+    private float windowStartedAt;
+    private float activeWindowDuration;
+    private int activeSpawnsPerWindow;
 
     public bool HasTarget => hasTarget;
     public Vector2 TargetViewportPosition => targetViewportPosition;
 
     public void ScheduleNextTarget(PlayerUltimateConfig config)
     {
-        float minDelay = Mathf.Max(0.1f, config.SpawnMinDelay);
-        float maxDelay = Mathf.Max(minDelay, config.SpawnMaxDelay);
-        nextTargetTime = Time.time + Random.Range(minDelay, maxDelay);
+        if (config.SpawnsPerWindow <= 0)
+        {
+            nextTargetTime = float.PositiveInfinity;
+            scheduleInitialized = false;
+            return;
+        }
+
+        if (!scheduleInitialized || HasScheduleConfigChanged(config))
+        {
+            StartWindow(Time.time, config);
+            return;
+        }
+
+        if (nextScheduledTargetIndex >= scheduledTargetTimes.Count)
+        {
+            StartWindow(windowStartedAt + activeWindowDuration, config);
+            return;
+        }
+
+        nextTargetTime = scheduledTargetTimes[nextScheduledTargetIndex];
+        nextScheduledTargetIndex++;
     }
 
     public void UpdateTarget(Vector2 centerViewportPosition, float radiusScale, PlayerUltimateConfig config, bool log)
@@ -70,6 +96,36 @@ public sealed class PlayerUltimate
         hasTarget = false;
         ScheduleNextTarget(config);
         return true;
+    }
+
+    private bool HasScheduleConfigChanged(PlayerUltimateConfig config)
+    {
+        return !Mathf.Approximately(activeWindowDuration, Mathf.Max(0.1f, config.SpawnWindowDuration))
+            || activeSpawnsPerWindow != Mathf.Max(0, config.SpawnsPerWindow);
+    }
+
+    private void StartWindow(float requestedWindowStart, PlayerUltimateConfig config)
+    {
+        activeWindowDuration = Mathf.Max(0.1f, config.SpawnWindowDuration);
+        activeSpawnsPerWindow = Mathf.Max(0, config.SpawnsPerWindow);
+        windowStartedAt = requestedWindowStart;
+        while (Time.time >= windowStartedAt + activeWindowDuration)
+        {
+            windowStartedAt += activeWindowDuration;
+        }
+
+        float scheduleStart = Mathf.Max(Time.time, windowStartedAt);
+        float scheduleEnd = windowStartedAt + activeWindowDuration;
+        scheduledTargetTimes.Clear();
+        for (int i = 0; i < activeSpawnsPerWindow; i++)
+        {
+            scheduledTargetTimes.Add(Random.Range(scheduleStart, scheduleEnd));
+        }
+
+        scheduledTargetTimes.Sort();
+        nextScheduledTargetIndex = 0;
+        scheduleInitialized = true;
+        ScheduleNextTarget(config);
     }
 
     private void SpawnTarget(Vector2 centerViewportPosition, float radiusScale, PlayerUltimateConfig config, bool log)
@@ -182,6 +238,8 @@ public struct PlayerUltimateConfig
     public GameObject FoxPrefab;
     public float SpawnMinDelay;
     public float SpawnMaxDelay;
+    public float SpawnWindowDuration;
+    public int SpawnsPerWindow;
     public float VisibleDuration;
     public float TargetRadius;
     public float OuterMinRadius;

@@ -35,6 +35,7 @@ public class ProjectileDamage : MonoBehaviour
         if (appliesHitStun && !damageable.IsDefeated && damageable is IHitStunnable hitStunnable)
         {
             hitStunnable.ApplyHitStun(hitStunDuration);
+            HitStunStatusIndicator.ShowOn(damageable.DamageTransform, hitStunDuration);
         }
 
         if (destroyOnHit)

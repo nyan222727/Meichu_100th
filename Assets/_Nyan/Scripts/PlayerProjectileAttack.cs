@@ -7,6 +7,7 @@ public class PlayerProjectileAttack : MonoBehaviour
     [SerializeField] private bool useLaunchPointOverride;
     [SerializeField] private float launchDistanceFromCamera = 0.65f;
     [SerializeField] private float launchVerticalOffset;
+    [SerializeField, Min(0f)] private float projectileLifetime = 5f;
     [SerializeField] private bool logAttacks = true;
 
     public bool Fire(
@@ -54,6 +55,10 @@ public class PlayerProjectileAttack : MonoBehaviour
 
         projectileDamage.Configure(damage, appliesHitStun, hitStunDuration);
         projectile.AddForce(sourceCamera.transform.forward * impulse, ForceMode.Impulse);
+        if (projectileLifetime > 0f)
+        {
+            Destroy(projectileObject, projectileLifetime);
+        }
 
         if (logAttacks)
         {

@@ -11,15 +11,15 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private LayerMask meleeHitMask = ~0;
 
     [Header("Damage")]
-    [SerializeField] private int weakDamage = 15;
-    [SerializeField] private int mediumDamage = 22;
-    [SerializeField] private int strongDamage = 30;
+    [SerializeField] private int weakDamage = 6;
+    [SerializeField] private int mediumDamage = 6;
+    [SerializeField] private int strongDamage = 6;
 
     [Header("Lingering Combo")]
     [SerializeField, Min(1)] private int maxComboHits = 5;
     [SerializeField, Range(0.05f, 1f)] private float chargePerExtraHit = 0.25f;
     [SerializeField, Min(0.01f)] private float comboInterval = 0.25f;
-    [SerializeField, Range(0.05f, 1f)] private float comboHitDamageScale = 0.7f;
+    [SerializeField, Range(0.05f, 1f)] private float comboHitDamageScale = 1f;
 
     [Header("Visual")]
     [SerializeField] private GameObject slashPrefab;
@@ -59,7 +59,6 @@ public class PlayerMeleeAttack : MonoBehaviour
         Vector2 slashViewportPosition,
         float displacementRatio,
         float chargeRatio,
-        float chargeMultiplier,
         bool appliesHitStun,
         float hitStunDuration)
     {
@@ -80,7 +79,7 @@ public class PlayerMeleeAttack : MonoBehaviour
             sourceCamera.transform.forward,
             sourceCamera.transform.up);
         int hitCount = GetComboHitCount(chargeRatio);
-        int damage = Mathf.RoundToInt(EvaluateDamage(displacementRatio) * chargeMultiplier);
+        int damage = EvaluateDamage(displacementRatio);
 
         activeCombo = StartCoroutine(AttackComboRoutine(
             attackPosition,
@@ -173,6 +172,7 @@ public class PlayerMeleeAttack : MonoBehaviour
             if (appliesHitStun && !damageable.IsDefeated && damageable is IHitStunnable hitStunnable)
             {
                 hitStunnable.ApplyHitStun(hitStunDuration);
+                HitStunStatusIndicator.ShowOn(damageable.DamageTransform, hitStunDuration);
             }
 
             if (logAttacks)

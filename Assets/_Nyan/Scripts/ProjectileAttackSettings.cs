@@ -4,11 +4,11 @@ using UnityEngine;
 public class ProjectileAttackSettings : ScriptableObject
 {
     [SerializeField] private float weakImpulse = 3.5f;
-    [SerializeField] private int weakDamage = 10;
+    [SerializeField] private int weakDamage = 3;
     [SerializeField] private float mediumImpulse = 6f;
-    [SerializeField] private int mediumDamage = 20;
+    [SerializeField] private int mediumDamage = 4;
     [SerializeField] private float strongImpulse = 9f;
-    [SerializeField] private int strongDamage = 30;
+    [SerializeField] private int strongDamage = 6;
 
     public ProjectileAttackStats EvaluateStats(float displacementRatio)
     {

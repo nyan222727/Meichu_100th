@@ -31,11 +31,11 @@ public class PlayerCombatController : MonoBehaviour
     [Tooltip("Total finger travel, normalized by the shorter screen side. Reaching this value gives max charge.")]
     [SerializeField, Range(0.01f, 10f)] private float gestureChargeTravelForMax = 1.2f;
     [SerializeField] private float minChargeMultiplier = 1f;
-    [SerializeField] private float maxChargeMultiplier = 2.5f;
+    [SerializeField] private float maxChargeMultiplier = 5f;
 
     [Header("Charged Hit Stun")]
     [SerializeField, Range(0f, 1f)] private float hitStunChargeThreshold = 0.7f;
-    [SerializeField, Min(0f)] private float hitStunDuration = 0.2f;
+    [SerializeField, Min(0f)] private float hitStunDuration = 0.5f;
 
     [Header("Attack Displacement")]
     [InspectorName("Attack Trigger Radius")]
@@ -61,6 +61,8 @@ public class PlayerCombatController : MonoBehaviour
     [SerializeField] private GameObject foxPrefab;
     [SerializeField] private float ultimateSpawnMinDelay = 2.5f;
     [SerializeField] private float ultimateSpawnMaxDelay = 5.5f;
+    [SerializeField, Min(0.1f)] private float ultimateSpawnWindowDuration = 300f;
+    [SerializeField, Min(0)] private int ultimateSpawnsPerWindow = 2;
     [SerializeField] private float ultimateVisibleDuration = 1.1f;
     [SerializeField] private float ultimateTargetRadius = 0.045f;
     [SerializeField] private float ultimateOuterMinRadius = 0.35f;
@@ -68,7 +70,7 @@ public class PlayerCombatController : MonoBehaviour
     [SerializeField, Range(0f, 180f)] private float ultimateTargetFanMinAngle = 35f;
     [SerializeField, Range(0f, 180f)] private float ultimateTargetFanMaxAngle = 145f;
     [SerializeField] private float ultimateSpawnDistanceFromCamera = 1.1f;
-    [SerializeField] private int ultimateFoxDamage = 45;
+    [SerializeField] private int ultimateFoxDamage = 150;
 
     [Header("Player Health UI")]
     [SerializeField] private PlayerHealth playerHealth;
@@ -124,6 +126,8 @@ public class PlayerCombatController : MonoBehaviour
         chargeCenterViewport = ClampViewport(chargeCenterViewport);
         aimViewportPosition = ClampViewport(aimViewportPosition);
         ultimateTargetRadius = Mathf.Max(0.01f, ultimateTargetRadius);
+        ultimateSpawnWindowDuration = Mathf.Max(0.1f, ultimateSpawnWindowDuration);
+        ultimateSpawnsPerWindow = Mathf.Max(0, ultimateSpawnsPerWindow);
         ultimateOuterMinRadius = Mathf.Max(ultimateOuterMinRadius, redRadius + ultimateTargetRadius);
         ultimateOuterMaxRadius = Mathf.Max(ultimateOuterMaxRadius, ultimateOuterMinRadius);
         ultimateTargetFanMinAngle = Mathf.Clamp(ultimateTargetFanMinAngle, 0f, 180f);
@@ -312,7 +316,7 @@ public class PlayerCombatController : MonoBehaviour
         }
         else if (currentAttackMode == AttackMode.Melee)
         {
-            ReleaseMeleeAttack(viewportPosition, dragDistance, chargeRatio, chargeMultiplier);
+            ReleaseMeleeAttack(viewportPosition, dragDistance, chargeRatio);
         }
 
         ResetInputState();
@@ -369,8 +373,7 @@ public class PlayerCombatController : MonoBehaviour
     private void ReleaseMeleeAttack(
         Vector2 viewportPosition,
         float dragDistance,
-        float chargeRatio,
-        float chargeMultiplier)
+        float chargeRatio)
     {
         if (!TryGetAttackStrength(dragDistance, out AttackStrength strength))
         {
@@ -389,7 +392,6 @@ public class PlayerCombatController : MonoBehaviour
             aimViewportPosition,
             displacementRatio,
             chargeRatio,
-            chargeMultiplier,
             chargeRatio >= hitStunChargeThreshold,
             hitStunDuration);
         ShowReleaseFeedback(viewportPosition, strength, false);
@@ -538,6 +540,8 @@ public class PlayerCombatController : MonoBehaviour
                 FoxPrefab = foxPrefab,
                 SpawnMinDelay = ultimateSpawnMinDelay,
                 SpawnMaxDelay = ultimateSpawnMaxDelay,
+                SpawnWindowDuration = ultimateSpawnWindowDuration,
+                SpawnsPerWindow = ultimateSpawnsPerWindow,
                 VisibleDuration = ultimateVisibleDuration,
                 TargetRadius = ultimateTargetRadius,
                 OuterMinRadius = ultimateOuterMinRadius,
@@ -550,6 +554,8 @@ public class PlayerCombatController : MonoBehaviour
 
         config.SpawnMinDelay = Mathf.Max(0.1f, config.SpawnMinDelay);
         config.SpawnMaxDelay = Mathf.Max(config.SpawnMinDelay, config.SpawnMaxDelay);
+        config.SpawnWindowDuration = Mathf.Max(0.1f, config.SpawnWindowDuration);
+        config.SpawnsPerWindow = Mathf.Max(0, config.SpawnsPerWindow);
         config.VisibleDuration = Mathf.Max(0.1f, config.VisibleDuration);
         config.TargetRadius = Mathf.Max(0.01f, config.TargetRadius);
         config.OuterMinRadius = Mathf.Max(config.OuterMinRadius, redRadius + config.TargetRadius);

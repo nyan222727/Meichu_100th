@@ -875,7 +875,7 @@ MonoBehaviour:
     m_FontStyle: 1
     m_BestFit: 0
     m_MinSize: 10
-    m_MaxSize: 40
+    m_MaxSize: 44
     m_Alignment: 4
     m_AlignByGeometry: 0
     m_RichText: 1
@@ -1813,7 +1813,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0912c23a7836c8642b59bee4f03c96e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameSceneName: FakrazeNyanMerge
+  gameSceneName: TotalMerge
   startButton: {fileID: 1378353139}
   tutorialButton: {fileID: 372733666}
   tutorialBackButton: {fileID: 529372938}

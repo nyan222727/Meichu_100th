@@ -951,7 +951,7 @@ MonoBehaviour:
   redRadius: 0.5
   gestureChargeTravelForMax: 10
   minChargeMultiplier: 1
-  maxChargeMultiplier: 3
+  maxChargeMultiplier: 5
   minimumAttackDisplacement: 0.13
   mediumAttackDisplacement: 0.16
   strongAttackDisplacement: 0.3
@@ -961,6 +961,8 @@ MonoBehaviour:
   foxPrefab: {fileID: 6356111818581873192, guid: 6d3b82c7cbdf4b9097c724d3943c4f17, type: 3}
   ultimateSpawnMinDelay: 2.5
   ultimateSpawnMaxDelay: 5.5
+  ultimateSpawnWindowDuration: 300
+  ultimateSpawnsPerWindow: 2
   ultimateVisibleDuration: 1.1
   ultimateTargetRadius: 0.045
   ultimateOuterMinRadius: 0.545
@@ -968,7 +970,7 @@ MonoBehaviour:
   ultimateTargetFanMinAngle: 35
   ultimateTargetFanMaxAngle: 145
   ultimateSpawnDistanceFromCamera: 1.1
-  ultimateFoxDamage: 45
+  ultimateFoxDamage: 150
   playerHealth: {fileID: 0}
   healthBarCenterGap: 0.055
   healthBarSideMargin: 0.035
@@ -1011,9 +1013,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   meleeRange: 1.2
-  weakDamage: 15
-  mediumDamage: 25
-  strongDamage: 40
+  weakDamage: 6
+  mediumDamage: 6
+  strongDamage: 6
   meleeHitMask:
     serializedVersion: 2
     m_Bits: 4294967295

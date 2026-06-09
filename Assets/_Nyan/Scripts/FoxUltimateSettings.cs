@@ -6,6 +6,8 @@ public class FoxUltimateSettings : ScriptableObject
     [SerializeField] private GameObject summonPrefab;
     [SerializeField] private float spawnMinDelay = 2.5f;
     [SerializeField] private float spawnMaxDelay = 5.5f;
+    [SerializeField, Min(0.1f)] private float spawnWindowDuration = 300f;
+    [SerializeField, Min(0)] private int spawnsPerWindow = 2;
     [SerializeField] private float visibleDuration = 1.1f;
     [SerializeField] private float targetRadius = 0.045f;
     [SerializeField] private float outerMinRadius = 0.35f;
@@ -13,7 +15,7 @@ public class FoxUltimateSettings : ScriptableObject
     [SerializeField, Range(0f, 180f)] private float targetFanMinAngle = 35f;
     [SerializeField, Range(0f, 180f)] private float targetFanMaxAngle = 145f;
     [SerializeField] private float spawnDistanceFromCamera = 1.1f;
-    [SerializeField] private int damage = 45;
+    [SerializeField] private int damage = 150;
 
     public PlayerUltimateConfig ToConfig()
     {
@@ -22,6 +24,8 @@ public class FoxUltimateSettings : ScriptableObject
             FoxPrefab = summonPrefab,
             SpawnMinDelay = spawnMinDelay,
             SpawnMaxDelay = spawnMaxDelay,
+            SpawnWindowDuration = spawnWindowDuration,
+            SpawnsPerWindow = spawnsPerWindow,
             VisibleDuration = visibleDuration,
             TargetRadius = targetRadius,
             OuterMinRadius = outerMinRadius,
@@ -37,6 +41,8 @@ public class FoxUltimateSettings : ScriptableObject
     {
         spawnMinDelay = Mathf.Max(0.1f, spawnMinDelay);
         spawnMaxDelay = Mathf.Max(spawnMinDelay, spawnMaxDelay);
+        spawnWindowDuration = Mathf.Max(0.1f, spawnWindowDuration);
+        spawnsPerWindow = Mathf.Max(0, spawnsPerWindow);
         visibleDuration = Mathf.Max(0.1f, visibleDuration);
         targetRadius = Mathf.Max(0.01f, targetRadius);
         outerMinRadius = Mathf.Max(0f, outerMinRadius);
