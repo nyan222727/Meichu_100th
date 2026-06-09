@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Video;
 
 public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
 {
@@ -149,13 +148,12 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
     [Tooltip("如果你在 Animator 視窗直接把 Dead Bool 打開，是否也要觸發下沉。")]
     public bool sinkWhenAnimatorDeadBoolIsTrue = true;
 
-    [Header("Death Video")]
-    public VideoClip deathVideoClip;
-    public ReverseVideoQuadPlayer deathVideoPlayer;
+    [Header("Death Elevator")]
+    public GameObject goDownElevatorObject;
     public string deathAnimationStateName = "Dead";
-    public float deathVideoFallbackDelay = 1.2f;
-    public Vector3 deathVideoLocalPosition = new Vector3(1.65f, 1.2f, 0.2f);
-    public Vector2 deathVideoSize = new Vector2(2.6f, 1.46f);
+    public float goDownElevatorSpawnFallbackDelay = 1.2f;
+    public float goDownElevatorAnimationWaitTimeout = 5f;
+    public bool hideGoDownElevatorOnStart = true;
 
     [Header("Debug")]
     public bool showClawRange = true;
@@ -169,7 +167,7 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
     private Coroutine deadSinkCoroutine;
     private Coroutine clawWeaponCoroutine;
     private bool hasStartedDeathSink = false;
-    private bool hasStartedDeathVideo = false;
+    private bool hasSpawnedGoDownElevator = false;
 
     private bool isAttacking = false;
     private float hitStunRemaining;
@@ -185,7 +183,6 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
     private int castTriggerHash;
     private int castIndexHash;
     private int deadBoolHash;
-    private int deathAnimationStateHash;
 
     private void Awake()
     {
@@ -201,7 +198,6 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
         castIndexHash = Animator.StringToHash(castIndexName);
 
         deadBoolHash = Animator.StringToHash(deadBoolName);
-        deathAnimationStateHash = Animator.StringToHash(deathAnimationStateName);
     }
 
     private void Start()
@@ -258,6 +254,12 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
         if (hideClawWeaponOnStart && clawWeaponObject != null)
         {
             clawWeaponObject.SetActive(false);
+        }
+
+        ResolveGoDownElevatorObject();
+        if (hideGoDownElevatorOnStart && goDownElevatorObject != null)
+        {
+            goDownElevatorObject.SetActive(false);
         }
 
         ResolveQuizManager(false);
@@ -926,7 +928,7 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
         }
 
         StartDeadSink();
-        StartDeathVideoAfterAnimation();
+        StartGoDownElevatorSpawnRoutine();
 
         if (soundController != null)
         {
@@ -958,7 +960,7 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
             HideClawWeaponImmediately();
 
             StartDeadSink();
-            StartDeathVideoAfterAnimation();
+            StartGoDownElevatorSpawnRoutine();
 
             if (soundController != null)
             {
@@ -1010,117 +1012,91 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
         deadSinkCoroutine = null;
     }
 
-    private void StartDeathVideoAfterAnimation()
+    private void StartGoDownElevatorSpawnRoutine()
     {
-        if (hasStartedDeathVideo)
-        {
-            return;
-        }
+        if (hasSpawnedGoDownElevator) return;
+        ResolveGoDownElevatorObject();
+        if (goDownElevatorObject == null) return;
 
-        if (deathVideoClip == null && deathVideoPlayer == null)
-        {
-            return;
-        }
-
-        hasStartedDeathVideo = true;
-        StartCoroutine(DeathVideoRoutine());
+        StartCoroutine(SpawnGoDownElevatorAfterDeathAnimation());
     }
 
-    private IEnumerator DeathVideoRoutine()
+    private IEnumerator SpawnGoDownElevatorAfterDeathAnimation()
     {
         yield return WaitForDeathAnimationToFinish();
-
-        ReverseVideoQuadPlayer player = GetOrCreateDeathVideoPlayer();
-        if (player != null)
-        {
-            player.PlayReverse();
-        }
+        SpawnGoDownElevator();
     }
 
     private IEnumerator WaitForDeathAnimationToFinish()
     {
-        float fallbackDelay = Mathf.Max(deadSinkDuration, deathVideoFallbackDelay);
         if (animator == null)
         {
-            yield return new WaitForSeconds(fallbackDelay);
+            yield return new WaitForSeconds(Mathf.Max(0f, goDownElevatorSpawnFallbackDelay));
             yield break;
         }
 
-        float elapsed = 0f;
-        float timeout = Mathf.Max(fallbackDelay + 3f, 5f);
+        float remaining = Mathf.Max(0.01f, goDownElevatorAnimationWaitTimeout);
         bool enteredDeathState = false;
+        int deathStateHash = Animator.StringToHash(deathAnimationStateName);
 
-        while (elapsed < timeout)
+        while (remaining > 0f)
         {
-            AnimatorStateInfo currentState = animator.GetCurrentAnimatorStateInfo(0);
-            AnimatorStateInfo nextState = animator.IsInTransition(0)
-                ? animator.GetNextAnimatorStateInfo(0)
-                : currentState;
+            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+            bool isDeathState = stateInfo.shortNameHash == deathStateHash
+                || stateInfo.IsName(deathAnimationStateName);
 
-            bool currentIsDeath = IsDeathAnimationState(currentState);
-            bool nextIsDeath = IsDeathAnimationState(nextState);
-            if (currentIsDeath || nextIsDeath)
+            if (isDeathState)
             {
                 enteredDeathState = true;
-            }
 
-            if (enteredDeathState
-                && currentIsDeath
-                && !animator.IsInTransition(0)
-                && currentState.normalizedTime >= 0.98f)
+                if (stateInfo.normalizedTime >= 1f && !animator.IsInTransition(0))
+                {
+                    yield break;
+                }
+            }
+            else if (enteredDeathState)
             {
                 yield break;
             }
 
-            elapsed += Time.deltaTime;
+            remaining -= Time.deltaTime;
             yield return null;
         }
 
         if (!enteredDeathState)
         {
-            yield return new WaitForSeconds(fallbackDelay);
+            yield return new WaitForSeconds(Mathf.Max(0f, goDownElevatorSpawnFallbackDelay));
         }
     }
 
-    private bool IsDeathAnimationState(AnimatorStateInfo stateInfo)
+    private void SpawnGoDownElevator()
     {
-        return stateInfo.shortNameHash == deathAnimationStateHash
-            || stateInfo.IsName(deathAnimationStateName);
+        if (hasSpawnedGoDownElevator) return;
+        ResolveGoDownElevatorObject();
+        if (goDownElevatorObject == null) return;
+
+        hasSpawnedGoDownElevator = true;
+
+        goDownElevatorObject.SetActive(true);
     }
 
-    private ReverseVideoQuadPlayer GetOrCreateDeathVideoPlayer()
+    private void ResolveGoDownElevatorObject()
     {
-        if (deathVideoPlayer != null)
+        if (goDownElevatorObject != null)
         {
-            if (deathVideoClip != null)
-            {
-                deathVideoPlayer.SetClip(deathVideoClip);
-            }
-            return deathVideoPlayer;
+            return;
         }
 
-        GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
-        quad.name = "LinChihungElevatorVideoQuad";
-
-        Collider quadCollider = quad.GetComponent<Collider>();
-        if (quadCollider != null)
+        Transform elevator = transform.Find("GoDownEvlelator");
+        if (elevator == null)
         {
-            Destroy(quadCollider);
+            elevator = transform.Find("GoDownElevator");
         }
 
-        quad.transform.SetParent(transform, false);
-        quad.transform.localPosition = deathVideoLocalPosition;
-        quad.transform.localRotation = Quaternion.identity;
-
-        quad.transform.localScale = new Vector3(
-            Mathf.Max(0.01f, deathVideoSize.x),
-            Mathf.Max(0.01f, deathVideoSize.y),
-            1f);
-
-        quad.AddComponent<VideoPlayer>();
-        deathVideoPlayer = quad.AddComponent<ReverseVideoQuadPlayer>();
-        deathVideoPlayer.SetClip(deathVideoClip);
-        return deathVideoPlayer;
+        if (elevator != null)
+        {
+            goDownElevatorObject = elevator.gameObject;
+        }
     }
 
     private void StartClawWeaponRoutine()

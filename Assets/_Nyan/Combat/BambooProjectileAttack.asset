@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BambooProjectileAttack
   m_EditorClassIdentifier: 
   weakImpulse: 3
-  weakDamage: 3
+  weakDamage: 1000
   mediumImpulse: 3
   mediumDamage: 4
   strongImpulse: 3
