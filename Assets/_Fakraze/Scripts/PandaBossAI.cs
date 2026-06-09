@@ -540,11 +540,6 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
 
         PlayRandomCastAnimation();
 
-        if (soundController != null)
-        {
-            soundController.PlayCastSound();
-        }
-
         yield return WaitForActiveSeconds(quizWindupTime);
 
         if (ResolveQuizManager(true))
@@ -705,6 +700,7 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
         if (soundController != null)
         {
             soundController.PlayCastSound();
+            soundController.PlayMeteorFallSound();
         }
 
         List<Vector3> targetPositions = GetNonOverlappingMeteorTargetPositions();
@@ -935,7 +931,6 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
             soundController.PlayDeathSound();
         }
 
-        GameAudioController.PlayVictoryMusic();
         Debug.Log("Panda Boss died!");
     }
 
@@ -963,12 +958,7 @@ public class PandaBossAI : MonoBehaviour, IDamageable, IHitStunnable
             StartDeadSink();
             StartGoDownElevatorSpawnRoutine();
 
-            if (soundController != null)
-            {
-                soundController.PlayDeathSound();
-            }
 
-            GameAudioController.PlayVictoryMusic();
             Debug.Log("Panda Boss dead sink triggered by Animator Dead bool.");
         }
     }

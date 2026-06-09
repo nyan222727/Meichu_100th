@@ -202,11 +202,13 @@ MonoBehaviour:
   clawSound: {fileID: 8300000, guid: 9df33475b7e55b84e97848623eea3b45, type: 3}
   throwSound: {fileID: 8300000, guid: 41437eb4891e95a458ed130d2d1fdbab, type: 3}
   castSound: {fileID: 8300000, guid: 7b0ce20bd5758ec43b476e00018235c3, type: 3}
+  meteorFallSound: {fileID: 8300000, guid: e6faaffde093ce3458247c4fc89a71c0, type: 3}
   hitSound: {fileID: 0}
-  deathSound: {fileID: 8300000, guid: a34c66ae5f81ae64ca52d5ac283d9a49, type: 3}
-  clawSoundDelay: 2
+  deathSound: {fileID: 8300000, guid: 02d44a9568f1d5046a5b52ecef23c904, type: 3}
+  clawSoundDelay: 0.4
   throwSoundDelay: 0.6
   castSoundDelay: 0
+  meteorFallSoundDelay: 1.2
   hitSoundDelay: 0
   deathSoundDelay: 0
 --- !u!82 &1547903377068992917

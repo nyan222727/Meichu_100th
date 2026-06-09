@@ -58,6 +58,7 @@ public class PlayerCombatController : MonoBehaviour
     [Header("Fox Ultimate")]
     [FormerlySerializedAs("ultimateDefinition")]
     [SerializeField] private FoxUltimateSettings ultimateSettings;
+    [SerializeField] private UltimateSkillManager ultimateSkillManager;
     [SerializeField] private GameObject foxPrefab;
     [SerializeField] private float ultimateSpawnMinDelay = 2.5f;
     [SerializeField] private float ultimateSpawnMaxDelay = 5.5f;
@@ -329,7 +330,7 @@ public class PlayerCombatController : MonoBehaviour
 
     private bool TryTriggerUltimate(Vector2 startViewportPosition, Vector2 endViewportPosition)
     {
-        return ultimate.TryTriggerSegment(
+        bool triggered = ultimate.TryTriggerSegment(
             startViewportPosition,
             endViewportPosition,
             false,
@@ -337,6 +338,26 @@ public class PlayerCombatController : MonoBehaviour
             GetUltimateConfig(),
             GetChargeRadiusScale(),
             logAttacks);
+
+        if (triggered)
+        {
+            TriggerUltimateVisual();
+        }
+
+        return triggered;
+    }
+
+    private void TriggerUltimateVisual()
+    {
+        if (ultimateSkillManager == null)
+        {
+            ultimateSkillManager = FindFirstObjectByType<UltimateSkillManager>(FindObjectsInactive.Include);
+        }
+
+        if (ultimateSkillManager != null)
+        {
+            ultimateSkillManager.TriggerUltimate();
+        }
     }
 
     private void ReleaseRangedAttack(

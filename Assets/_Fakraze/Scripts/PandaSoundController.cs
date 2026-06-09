@@ -10,6 +10,7 @@ public class PandaSoundController : MonoBehaviour
     public AudioClip clawSound;
     public AudioClip throwSound;
     public AudioClip castSound;
+    public AudioClip meteorFallSound;
     public AudioClip hitSound;
     public AudioClip deathSound;
 
@@ -20,8 +21,11 @@ public class PandaSoundController : MonoBehaviour
     [Tooltip("Throw / Plum 觸發後幾秒播放聲音")]
     public float throwSoundDelay = 0.2f;
 
-    [Tooltip("Cast / Meteor 觸發後幾秒播放聲音")]
+    [Tooltip("Cast / Summon 觸發後幾秒播放聲音")]
     public float castSoundDelay = 0.1f;
+
+    [Tooltip("Meteor 生成 / 開始墜落後幾秒播放聲音")]
+    public float meteorFallSoundDelay = 0.1f;
 
     [Tooltip("Hit 觸發後幾秒播放聲音")]
     public float hitSoundDelay = 0f;
@@ -50,6 +54,11 @@ public class PandaSoundController : MonoBehaviour
     public void PlayCastSound()
     {
         PlaySoundWithDelay(castSound, castSoundDelay);
+    }
+
+    public void PlayMeteorFallSound()
+    {
+        PlaySoundWithDelay(meteorFallSound, meteorFallSoundDelay);
     }
 
     public void PlayHitSound()

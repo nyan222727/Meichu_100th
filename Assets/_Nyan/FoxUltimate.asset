@@ -15,7 +15,7 @@ MonoBehaviour:
   summonPrefab: {fileID: 6356111818581873192, guid: 6d3b82c7cbdf4b9097c724d3943c4f17, type: 3}
   spawnMinDelay: 2.5
   spawnMaxDelay: 5.5
-  spawnWindowDuration: 300
+  spawnWindowDuration: 10
   spawnsPerWindow: 2
   visibleDuration: 1.1
   targetRadius: 0.045
