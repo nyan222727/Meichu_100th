@@ -1905,7 +1905,8 @@ MonoBehaviour:
   minChargeMultiplier: 1
   maxChargeMultiplier: 5
   hitStunChargeThreshold: 0.7
-  hitStunDuration: 0.5
+  rangedHitStunDuration: 1
+  meleeHitStunDuration: 0.5
   minimumAttackDisplacement: 0.13
   mediumAttackDisplacement: 0.16
   strongAttackDisplacement: 0.3
@@ -1976,8 +1977,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   weakDamage: 6
-  mediumDamage: 6
-  strongDamage: 6
+  mediumDamage: 9
+  strongDamage: 12
   maxComboHits: 5
   chargePerExtraHit: 0.25
   comboInterval: 0.25

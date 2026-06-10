@@ -12,8 +12,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     [Header("Damage")]
     [SerializeField] private int weakDamage = 6;
-    [SerializeField] private int mediumDamage = 6;
-    [SerializeField] private int strongDamage = 6;
+    [SerializeField] private int mediumDamage = 9;
+    [SerializeField] private int strongDamage = 12;
 
     [Header("Lingering Combo")]
     [SerializeField, Min(1)] private int maxComboHits = 5;

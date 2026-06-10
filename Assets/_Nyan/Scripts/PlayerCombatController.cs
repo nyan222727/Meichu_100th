@@ -36,7 +36,9 @@ public class PlayerCombatController : MonoBehaviour
 
     [Header("Charged Hit Stun")]
     [SerializeField, Range(0f, 1f)] private float hitStunChargeThreshold = 0.7f;
-    [SerializeField, Min(0f)] private float hitStunDuration = 0.5f;
+    [FormerlySerializedAs("hitStunDuration")]
+    [SerializeField, Min(0f)] private float rangedHitStunDuration = 1f;
+    [SerializeField, Min(0f)] private float meleeHitStunDuration = 0.5f;
 
     [Header("Attack Displacement")]
     [InspectorName("Attack Trigger Radius")]
@@ -127,7 +129,8 @@ public class PlayerCombatController : MonoBehaviour
         minChargeMultiplier = Mathf.Max(0f, minChargeMultiplier);
         maxChargeMultiplier = Mathf.Max(maxChargeMultiplier, minChargeMultiplier);
         hitStunChargeThreshold = Mathf.Clamp01(hitStunChargeThreshold);
-        hitStunDuration = Mathf.Max(0f, hitStunDuration);
+        rangedHitStunDuration = Mathf.Max(0f, rangedHitStunDuration);
+        meleeHitStunDuration = Mathf.Max(0f, meleeHitStunDuration);
         chargeFillMaxAlpha = Mathf.Clamp(chargeFillMaxAlpha, 0.02f, 0.35f);
         chargeCenterViewport = ClampViewport(chargeCenterViewport);
         aimViewportPosition = ClampViewport(aimViewportPosition);
@@ -425,7 +428,7 @@ public class PlayerCombatController : MonoBehaviour
             displacementRatio,
             chargeRatio,
             chargeRatio >= hitStunChargeThreshold,
-            hitStunDuration);
+            meleeHitStunDuration);
         ShowReleaseFeedback(viewportPosition, strength, false);
     }
 
@@ -438,7 +441,7 @@ public class PlayerCombatController : MonoBehaviour
             impulse,
             damage,
             appliesHitStun,
-            hitStunDuration);
+            rangedHitStunDuration);
     }
 
     private void UpdateStrengthAudio()
