@@ -17,6 +17,10 @@ public class PlayerCombatController : MonoBehaviour
     [FormerlySerializedAs("rangedAttackDefinition")]
     [SerializeField] private ProjectileAttackSettings rangedAttackSettings;
 
+    [Header("Gameplay Gate")]
+    [Tooltip("Keep this off for AR placement flow. PandaPlacement unlocks combat after the panda is placed.")]
+    [SerializeField] private bool combatUnlockedOnEnable;
+
     [Header("Screen Controls")]
     [FormerlySerializedAs("attackModeSplitY")]
     [SerializeField, Range(0.05f, 0.95f)] private float attackModeSplitX = 0.5f;
@@ -105,6 +109,7 @@ public class PlayerCombatController : MonoBehaviour
     private bool hasPointerPosition;
     private Vector2 lastPointerViewportPosition;
     private Vector2 activeChargeCenterViewport;
+    private bool combatUnlocked;
     private PandaBossAI cachedBossAi;
     private PandaHealth cachedPandaHealth;
 
@@ -151,15 +156,24 @@ public class PlayerCombatController : MonoBehaviour
         EnsureProjectileAttack();
         EnsureMeleeAttack();
         EnsureCanvasHud();
+        combatUnlocked = combatUnlockedOnEnable;
         if (canvasHud != null)
         {
-            canvasHud.SetVisible(true);
+            canvasHud.SetVisible(combatUnlocked);
         }
 
         GameAudioController.PlayGameMusic();
         activeChargeCenterViewport = chargeCenterViewport;
         ResetInputState();
-        ultimate.ScheduleNextTarget(GetUltimateConfig());
+        if (combatUnlocked)
+        {
+            ultimate.Reset();
+            ultimate.ScheduleNextTarget(GetUltimateConfig());
+        }
+        else
+        {
+            ultimate.Reset();
+        }
     }
 
     private void OnDisable()
@@ -170,12 +184,32 @@ public class PlayerCombatController : MonoBehaviour
         }
 
         GameAudioController.StopStrengthLoop();
+        ultimate.Reset();
     }
 
     public void SetPlayerHealth(int currentHealth, int maxHealth)
     {
         EnsurePlayerHealth();
         playerHealth.SetHealth(currentHealth, maxHealth);
+    }
+
+    public void SetCombatUnlocked(bool unlocked)
+    {
+        combatUnlocked = unlocked;
+        ResetInputState();
+
+        EnsureCanvasHud();
+        if (canvasHud != null)
+        {
+            canvasHud.SetVisible(combatUnlocked);
+        }
+
+        ultimate.Reset();
+        if (combatUnlocked)
+        {
+            mainCamera = mainCamera != null ? mainCamera : Camera.main;
+            ultimate.ScheduleNextTarget(GetUltimateConfig());
+        }
     }
 
     private void Update()
@@ -187,6 +221,21 @@ public class PlayerCombatController : MonoBehaviour
             {
                 return;
             }
+        }
+
+        if (!combatUnlocked)
+        {
+            if (isDragging)
+            {
+                ResetInputState();
+            }
+
+            if (canvasHud != null)
+            {
+                canvasHud.SetVisible(false);
+            }
+
+            return;
         }
 
         if (Time.timeScale <= 0f)
@@ -339,6 +388,11 @@ public class PlayerCombatController : MonoBehaviour
 
     private bool TryTriggerUltimate(Vector2 startViewportPosition, Vector2 endViewportPosition)
     {
+        if (!combatUnlocked)
+        {
+            return false;
+        }
+
         bool triggered = ultimate.TryTriggerSegment(
             startViewportPosition,
             endViewportPosition,
@@ -817,6 +871,11 @@ public class PlayerCombatController : MonoBehaviour
 
     private void OnGUI()
     {
+        if (!combatUnlocked)
+        {
+            return;
+        }
+
         combatHud.Draw(GetHudSettings(), GetHudState());
     }
 }

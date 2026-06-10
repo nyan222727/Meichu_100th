@@ -918,6 +918,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1923108514}
     m_Modifications:
+    - target: {fileID: 771206562455674050, guid: 3abbfbd08316a8d4ba6f0affd8744bb2, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 70
+      objectReference: {fileID: 0}
+    - target: {fileID: 771206562455674050, guid: 3abbfbd08316a8d4ba6f0affd8744bb2, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 70
+      objectReference: {fileID: 0}
     - target: {fileID: 1690090829273239374, guid: 3abbfbd08316a8d4ba6f0affd8744bb2, type: 3}
       propertyPath: m_Name
       value: PlayerCombatHUD

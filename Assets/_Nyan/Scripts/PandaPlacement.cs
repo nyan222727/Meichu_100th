@@ -16,6 +16,15 @@ public class PandaPlacement : MonoBehaviour
     private GameObject spawnedPanda;
     private GameObject gameplayFloor;
 
+    private void Awake()
+    {
+        ResolveCombatController();
+        if (combatController != null)
+        {
+            combatController.SetCombatUnlocked(false);
+        }
+    }
+
     private void Update()
     {
         if (spawnedPanda != null || pandaPrefab == null || reticle == null)
@@ -52,14 +61,19 @@ public class PandaPlacement : MonoBehaviour
             reticle.gameObject.SetActive(false);
         }
 
-        if (combatController == null)
-        {
-            combatController = FindFirstObjectByType<PlayerCombatController>(FindObjectsInactive.Include);
-        }
-
+        ResolveCombatController();
         if (combatController != null)
         {
             combatController.enabled = true;
+            combatController.SetCombatUnlocked(true);
+        }
+    }
+
+    private void ResolveCombatController()
+    {
+        if (combatController == null)
+        {
+            combatController = FindFirstObjectByType<PlayerCombatController>(FindObjectsInactive.Include);
         }
     }
 

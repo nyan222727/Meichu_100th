@@ -20,6 +20,22 @@ public sealed class PlayerUltimate
     public bool HasTarget => hasTarget;
     public Vector2 TargetViewportPosition => targetViewportPosition;
 
+    public void Reset()
+    {
+        scheduledTargetTimes.Clear();
+        hasTarget = false;
+        nextTargetTime = float.PositiveInfinity;
+        targetExpiresAt = 0f;
+        targetViewportPosition = default;
+        scheduleInitialized = false;
+        nextScheduledTargetIndex = 0;
+        windowStartedAt = 0f;
+        activeWindowDuration = 0f;
+        activeSpawnsPerWindow = 0;
+        spawnWarningPending = false;
+        spawnWarningReadyAt = 0f;
+    }
+
     public void ScheduleNextTarget(PlayerUltimateConfig config)
     {
         if (config.SpawnsPerWindow <= 0)
