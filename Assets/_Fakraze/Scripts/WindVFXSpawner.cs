@@ -49,6 +49,10 @@ public class WindVFXController : MonoBehaviour
     [Tooltip("是否只使用水平風向，建議開啟")]
     public bool useHorizontalWindOnly = true;
 
+    [Header("No Wind Settings")]
+    [Tooltip("風力小於這個值時，視為沒有風，Particle System 會停止")]
+    public float noWindThreshold = 0.01f;
+
     [Header("Debug")]
     public bool drawDebugRay = true;
 
@@ -59,7 +63,8 @@ public class WindVFXController : MonoBehaviour
             cameraTransform = Camera.main.transform;
         }
 
-        PlayParticleSystem(swirlWindPS);
+        // 一開始不要直接播放，避免無風時也顯示
+        SetParticleEnabled(swirlWindPS, false, true);
     }
 
     void LateUpdate()
@@ -67,13 +72,25 @@ public class WindVFXController : MonoBehaviour
         if (WindManager.Instance == null || cameraTransform == null || swirlWindPS == null)
             return;
 
+        Vector3 windDirection = GetWindDirection();
+
+        // 沒有風時，直接關掉 Particle System，並且不要更新位置/旋轉
+        if (windDirection.sqrMagnitude < noWindThreshold * noWindThreshold)
+        {
+            SetParticleEnabled(swirlWindPS, false, true);
+            return;
+        }
+
+        // 有風時才顯示
+        SetParticleEnabled(swirlWindPS, true, false);
+
         UpdateWindVFX();
-        UpdateParticlePositionByWindDirection();
-        RotateParticleByWindDirection();
+        UpdateParticlePositionByWindDirection(windDirection);
+        RotateParticleByWindDirection(windDirection);
 
         if (drawDebugRay)
         {
-            DebugDrawWind();
+            DebugDrawWind(windDirection);
         }
     }
 
@@ -91,17 +108,10 @@ public class WindVFXController : MonoBehaviour
             SetParticleEmission(swirlWindPS, normalSwirlRate);
             SetVelocityOverLifetimeXMultiplier(swirlWindPS, normalVelocityXMultiplier);
         }
-
-        SetParticleEnabled(swirlWindPS, true);
     }
 
-    void UpdateParticlePositionByWindDirection()
+    void UpdateParticlePositionByWindDirection(Vector3 windDirection)
     {
-        Vector3 windDirection = GetWindDirection();
-
-        if (windDirection.sqrMagnitude < 0.01f)
-            return;
-
         float currentUpwindDistance = WindManager.Instance.isTyphoon
             ? typhoonUpwindDistance
             : normalUpwindDistance;
@@ -131,14 +141,9 @@ public class WindVFXController : MonoBehaviour
             + Vector3.up * targetVerticalOffset;
     }
 
-    void RotateParticleByWindDirection()
+    void RotateParticleByWindDirection(Vector3 windDirection)
     {
         if (!rotateByWindDirection || swirlWindPS == null)
-            return;
-
-        Vector3 windDirection = GetWindDirection();
-
-        if (windDirection.sqrMagnitude < 0.01f)
             return;
 
         // 方向只看 WindManager 的世界風向，不看 Camera rotation
@@ -162,10 +167,10 @@ public class WindVFXController : MonoBehaviour
                 windForce.x,
                 0f,
                 windForce.z
-            ).normalized;
+            );
         }
 
-        return windForce.normalized;
+        return windForce;
     }
 
     void SetParticleEmission(ParticleSystem ps, float rate)
@@ -188,7 +193,7 @@ public class WindVFXController : MonoBehaviour
         velocity.xMultiplier = xMultiplier;
     }
 
-    void SetParticleEnabled(ParticleSystem ps, bool enabled)
+    void SetParticleEnabled(ParticleSystem ps, bool enabled, bool clearParticles)
     {
         if (ps == null)
             return;
@@ -196,35 +201,35 @@ public class WindVFXController : MonoBehaviour
         if (enabled)
         {
             if (!ps.isPlaying)
+            {
                 ps.Play(true);
+            }
         }
         else
         {
             if (ps.isPlaying)
-                ps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            {
+                ps.Stop(
+                    true,
+                    clearParticles
+                        ? ParticleSystemStopBehavior.StopEmittingAndClear
+                        : ParticleSystemStopBehavior.StopEmitting
+                );
+            }
         }
     }
 
-    void PlayParticleSystem(ParticleSystem ps)
+    void DebugDrawWind(Vector3 windDirection)
     {
-        if (ps == null)
+        if (windDirection.sqrMagnitude < noWindThreshold * noWindThreshold)
             return;
 
-        ps.Play(true);
-    }
-
-    void DebugDrawWind()
-    {
-        Vector3 windDirection = GetWindDirection();
-
-        if (windDirection.sqrMagnitude < 0.01f)
-            return;
-
+        Vector3 normalizedWindDirection = windDirection.normalized;
         Vector3 targetWorldPosition = GetTargetWorldPosition();
 
         Debug.DrawRay(
             targetWorldPosition,
-            windDirection * 2f,
+            normalizedWindDirection * 2f,
             Color.green
         );
 

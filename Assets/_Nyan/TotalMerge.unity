@@ -1940,8 +1940,8 @@ MonoBehaviour:
   ultimateSpawnsPerWindow: 2
   ultimateVisibleDuration: 1.1
   ultimateTargetRadius: 0.1923077
-  ultimateOuterMinRadius: 0.545
-  ultimateOuterMaxRadius: 0.545
+  ultimateOuterMinRadius: 0.6923077
+  ultimateOuterMaxRadius: 0.6923077
   ultimateTargetFanMinAngle: 35
   ultimateTargetFanMaxAngle: 145
   ultimateSpawnDistanceFromCamera: 1.1
@@ -2203,12 +2203,20 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4415962110775403649, guid: 09f2dc5fce0251c4f905942f432da96a, type: 3}
+      propertyPath: typhoonProbability
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4415962110775403649, guid: 09f2dc5fce0251c4f905942f432da96a, type: 3}
+      propertyPath: windActiveDuration
+      value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 4415962110775403649, guid: 09f2dc5fce0251c4f905942f432da96a, type: 3}
       propertyPath: windRestMaxDuration
-      value: 0
+      value: 15
       objectReference: {fileID: 0}
     - target: {fileID: 4415962110775403649, guid: 09f2dc5fce0251c4f905942f432da96a, type: 3}
       propertyPath: windRestMinDuration
-      value: 0
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 7453127716004105101, guid: 09f2dc5fce0251c4f905942f432da96a, type: 3}
       propertyPath: m_Name
@@ -2227,8 +2235,16 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 171290037}
     - target: {fileID: 8090477588115662487, guid: 09f2dc5fce0251c4f905942f432da96a, type: 3}
+      propertyPath: normalUpwindDistance
+      value: -0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8090477588115662487, guid: 09f2dc5fce0251c4f905942f432da96a, type: 3}
       propertyPath: rotateByWindDirection
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8090477588115662487, guid: 09f2dc5fce0251c4f905942f432da96a, type: 3}
+      propertyPath: typhoonUpwindDistance
+      value: -0.05
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
