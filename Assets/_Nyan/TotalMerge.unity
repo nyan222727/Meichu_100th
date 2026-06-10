@@ -1915,7 +1915,7 @@ MonoBehaviour:
   ultimateSettings: {fileID: 11400000, guid: 1183f265508e46b092c581677bdb52c4, type: 2}
   ultimateSkillManager: {fileID: 0}
   ultimateAvailableFlash: {fileID: 0}
-  foxPrefab: {fileID: 6356111818581873192, guid: 6d3b82c7cbdf4b9097c724d3943c4f17, type: 3}
+  foxPrefab: {fileID: 1816181863783440253, guid: b766b8d5bbc6df7449e0fe9d581cf5a2, type: 3}
   ultimateSpawnMinDelay: 2.5
   ultimateSpawnMaxDelay: 5.5
   ultimateSpawnWarningDelay: 0.35
