@@ -1,5 +1,88 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2762327847127269548
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6504893500868354972}
+  - component: {fileID: 4415962110775403649}
+  - component: {fileID: 8090477588115662487}
+  m_Layer: 0
+  m_Name: WindManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6504893500868354972
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2762327847127269548}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.31214878, y: 4.3351145, z: -3.667136}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4275045434701854263}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4415962110775403649
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2762327847127269548}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c0982d085338d442b1986c9ae79f075, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentWindForce: {x: 0, y: 0, z: 0}
+  isTyphoon: 0
+  isWindActive: 0
+  windActiveDuration: 25
+  windRestMinDuration: 30
+  windRestMaxDuration: 50
+  normalWindMin: 2
+  normalWindMax: 8
+  typhoonWindMin: 20
+  typhoonWindMax: 40
+  typhoonProbability: 0.3
+--- !u!114 &8090477588115662487
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2762327847127269548}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1409adaa0d792ff44b570cb102cedbee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cameraTransform: {fileID: 0}
+  swirlWindPS: {fileID: 0}
+  targetDistanceInFrontOfCamera: 1
+  targetHorizontalOffset: 0
+  targetVerticalOffset: 0
+  normalUpwindDistance: 1
+  typhoonUpwindDistance: 2
+  normalSwirlRate: 20
+  normalVelocityXMultiplier: 10
+  typhoonSwirlRate: 50
+  typhoonVelocityXMultiplier: 30
+  rotateByWindDirection: 1
+  windRotationOffsetY: 90
+  useHorizontalWindOnly: 1
+  drawDebugRay: 1
 --- !u!1 &7453127716004105101
 GameObject:
   m_ObjectHideFlags: 0
@@ -29,7 +112,8 @@ Transform:
   m_LocalPosition: {x: 0.31214878, y: -4.3351145, z: 3.667136}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 6504893500868354972}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2833172435090821973
@@ -45,7 +129,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   autoStartQuestions: 1
-  questionInterval: 8
+  questionInterval: 35
   answerTimeLimit: 5
   playerHealth: {fileID: 0}
   wrongAnswerDamage: 10

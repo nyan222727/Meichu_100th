@@ -179,6 +179,18 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[1]'
       value: 
       objectReference: {fileID: 2100000, guid: b647852f732f45749910fd4e0dd6ab85, type: 2}
+    - target: {fileID: 8919795701906370411, guid: 56e5671a4cc3f3c40a44b8d6cff71d65, type: 3}
+      propertyPath: ShapeModule.m_Scale.x
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 8919795701906370411, guid: 56e5671a4cc3f3c40a44b8d6cff71d65, type: 3}
+      propertyPath: ShapeModule.m_Scale.y
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 8919795701906370411, guid: 56e5671a4cc3f3c40a44b8d6cff71d65, type: 3}
+      propertyPath: ShapeModule.m_Scale.z
+      value: 20
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -234,7 +246,7 @@ MonoBehaviour:
   normalWindMax: 8
   typhoonWindMin: 20
   typhoonWindMax: 40
-  typhoonProbability: 0.1
+  typhoonProbability: 0.3
 --- !u!4 &44628049
 Transform:
   m_ObjectHideFlags: 0
@@ -268,10 +280,10 @@ MonoBehaviour:
   targetHorizontalOffset: 0
   targetVerticalOffset: 0
   normalUpwindDistance: 1
-  typhoonUpwindDistance: 3
-  normalSwirlRate: 8
+  typhoonUpwindDistance: 2
+  normalSwirlRate: 20
   normalVelocityXMultiplier: 10
-  typhoonSwirlRate: 20
+  typhoonSwirlRate: 50
   typhoonVelocityXMultiplier: 30
   rotateByWindDirection: 1
   windRotationOffsetY: 90
@@ -328,6 +340,10 @@ PrefabInstance:
     - target: {fileID: 7281038865801146156, guid: 105da65b32ffaab4c8628ec4ea342de8, type: 3}
       propertyPath: m_Name
       value: Bamboo_01
+      objectReference: {fileID: 0}
+    - target: {fileID: 7281038865801146156, guid: 105da65b32ffaab4c8628ec4ea342de8, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -919,8 +935,8 @@ RectTransform:
   m_GameObject: {fileID: 547525816}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.20092595, y: 0.20092595, z: 0.20092595}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 30, y: 30, z: 30}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 1018266707}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -994,6 +1010,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: PlayerCombatHUD
       objectReference: {fileID: 0}
+    - target: {fileID: 1850881747583443945, guid: 3abbfbd08316a8d4ba6f0affd8744bb2, type: 3}
+      propertyPath: screenFlash
+      value: 
+      objectReference: {fileID: 547525818}
+    - target: {fileID: 5483807976802737089, guid: 3abbfbd08316a8d4ba6f0affd8744bb2, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 8efd62d7dd4f39447bbe1c27296dc737, type: 3}
     - target: {fileID: 6233251255221019353, guid: 3abbfbd08316a8d4ba6f0affd8744bb2, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -1835,9 +1859,11 @@ MonoBehaviour:
   meleeAttack: {fileID: 1923108517}
   ultimateSettings: {fileID: 11400000, guid: 1183f265508e46b092c581677bdb52c4, type: 2}
   ultimateSkillManager: {fileID: 0}
+  ultimateAvailableFlash: {fileID: 0}
   foxPrefab: {fileID: 6356111818581873192, guid: 6d3b82c7cbdf4b9097c724d3943c4f17, type: 3}
   ultimateSpawnMinDelay: 2.5
   ultimateSpawnMaxDelay: 5.5
+  ultimateSpawnWarningDelay: 0.35
   ultimateSpawnWindowDuration: 300
   ultimateSpawnsPerWindow: 2
   ultimateVisibleDuration: 1.1
@@ -2025,8 +2051,12 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 755193873}
     - target: {fileID: 2833172435090821973, guid: 09f2dc5fce0251c4f905942f432da96a, type: 3}
+      propertyPath: questionInterval
+      value: 35
+      objectReference: {fileID: 0}
+    - target: {fileID: 2833172435090821973, guid: 09f2dc5fce0251c4f905942f432da96a, type: 3}
       propertyPath: autoStartQuestions
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2833172435090821973, guid: 09f2dc5fce0251c4f905942f432da96a, type: 3}
       propertyPath: 'optionButtons.Array.data[0]'

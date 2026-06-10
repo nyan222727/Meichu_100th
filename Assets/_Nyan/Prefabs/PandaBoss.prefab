@@ -152,7 +152,7 @@ MonoBehaviour:
   plumDamage: 10
   plumProjectileSpeed: 6
   plumWindupTime: 0.7
-  meatballMeteorPrefab: {fileID: 2407628490172359163, guid: 25b0440db03957d40a45ea0f86850141, type: 3}
+  meatballMeteorPrefab: {fileID: 2967706114188468550, guid: 9d0c79e6fabf4264ca69d85428fbbd0d, type: 3}
   meteorCount: 10
   meteorSpawnDelay: 0.15
   meteorSpawnHeight: 10
@@ -162,7 +162,7 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
-  enableQuizAttack: 1
+  enableQuizAttack: 0
   quizManager: {fileID: 0}
   quizRange: 8
   quizWindupTime: 0.35

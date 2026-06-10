@@ -14,6 +14,8 @@ public sealed class PlayerUltimate
     private float windowStartedAt;
     private float activeWindowDuration;
     private int activeSpawnsPerWindow;
+    private bool spawnWarningPending;
+    private float spawnWarningReadyAt;
 
     public bool HasTarget => hasTarget;
     public Vector2 TargetViewportPosition => targetViewportPosition;
@@ -24,6 +26,7 @@ public sealed class PlayerUltimate
         {
             nextTargetTime = float.PositiveInfinity;
             scheduleInitialized = false;
+            spawnWarningPending = false;
             return;
         }
 
@@ -56,9 +59,31 @@ public sealed class PlayerUltimate
             return;
         }
 
+        if (spawnWarningPending)
+        {
+            if (Time.time >= spawnWarningReadyAt)
+            {
+                spawnWarningPending = false;
+                SpawnTarget(centerViewportPosition, radiusScale, config, log);
+            }
+
+            return;
+        }
+
         if (Time.time >= nextTargetTime)
         {
-            SpawnTarget(centerViewportPosition, radiusScale, config, log);
+            config.TargetSpawnFlash?.Flash();
+
+            float warningDelay = Mathf.Max(0f, config.SpawnWarningDelay);
+            if (warningDelay <= 0f)
+            {
+                SpawnTarget(centerViewportPosition, radiusScale, config, log);
+                return;
+            }
+
+            spawnWarningPending = true;
+            spawnWarningReadyAt = Time.time + warningDelay;
+            nextTargetTime = float.PositiveInfinity;
         }
     }
 
@@ -76,6 +101,7 @@ public sealed class PlayerUltimate
 
         SummonFox(sourceCamera, config, log);
         hasTarget = false;
+        spawnWarningPending = false;
         ScheduleNextTarget(config);
         return true;
     }
@@ -94,6 +120,7 @@ public sealed class PlayerUltimate
 
         SummonFox(sourceCamera, config, log);
         hasTarget = false;
+        spawnWarningPending = false;
         ScheduleNextTarget(config);
         return true;
     }
@@ -140,7 +167,6 @@ public sealed class PlayerUltimate
         targetViewportPosition = ScreenToViewport(ClampTargetToScreen(targetScreenPosition, config.TargetRadius, radiusScale));
         hasTarget = true;
         targetExpiresAt = Time.time + Mathf.Max(0.1f, config.VisibleDuration);
-        config.TargetSpawnFlash?.Flash();
 
         if (log)
         {
@@ -239,6 +265,7 @@ public struct PlayerUltimateConfig
     public GameObject FoxPrefab;
     public float SpawnMinDelay;
     public float SpawnMaxDelay;
+    public float SpawnWarningDelay;
     public float SpawnWindowDuration;
     public int SpawnsPerWindow;
     public float VisibleDuration;

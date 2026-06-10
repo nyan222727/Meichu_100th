@@ -6,6 +6,7 @@ public class FoxUltimateSettings : ScriptableObject
     [SerializeField] private GameObject summonPrefab;
     [SerializeField] private float spawnMinDelay = 2.5f;
     [SerializeField] private float spawnMaxDelay = 5.5f;
+    [SerializeField, Min(0f)] private float spawnWarningDelay = 0.35f;
     [SerializeField, Min(0.1f)] private float spawnWindowDuration = 300f;
     [SerializeField, Min(0)] private int spawnsPerWindow = 2;
     [SerializeField] private float visibleDuration = 1.1f;
@@ -24,6 +25,7 @@ public class FoxUltimateSettings : ScriptableObject
             FoxPrefab = summonPrefab,
             SpawnMinDelay = spawnMinDelay,
             SpawnMaxDelay = spawnMaxDelay,
+            SpawnWarningDelay = spawnWarningDelay,
             SpawnWindowDuration = spawnWindowDuration,
             SpawnsPerWindow = spawnsPerWindow,
             VisibleDuration = visibleDuration,
@@ -41,6 +43,7 @@ public class FoxUltimateSettings : ScriptableObject
     {
         spawnMinDelay = Mathf.Max(0.1f, spawnMinDelay);
         spawnMaxDelay = Mathf.Max(spawnMinDelay, spawnMaxDelay);
+        spawnWarningDelay = Mathf.Max(0f, spawnWarningDelay);
         spawnWindowDuration = Mathf.Max(0.1f, spawnWindowDuration);
         spawnsPerWindow = Mathf.Max(0, spawnsPerWindow);
         visibleDuration = Mathf.Max(0.1f, visibleDuration);

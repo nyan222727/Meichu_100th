@@ -64,6 +64,7 @@ public class PlayerCombatController : MonoBehaviour
     [SerializeField] private GameObject foxPrefab;
     [SerializeField] private float ultimateSpawnMinDelay = 2.5f;
     [SerializeField] private float ultimateSpawnMaxDelay = 5.5f;
+    [SerializeField, Min(0f)] private float ultimateSpawnWarningDelay = 0.35f;
     [SerializeField, Min(0.1f)] private float ultimateSpawnWindowDuration = 300f;
     [SerializeField, Min(0)] private int ultimateSpawnsPerWindow = 2;
     [SerializeField] private float ultimateVisibleDuration = 1.1f;
@@ -131,6 +132,7 @@ public class PlayerCombatController : MonoBehaviour
         chargeCenterViewport = ClampViewport(chargeCenterViewport);
         aimViewportPosition = ClampViewport(aimViewportPosition);
         ultimateTargetRadius = Mathf.Max(0.01f, ultimateTargetRadius);
+        ultimateSpawnWarningDelay = Mathf.Max(0f, ultimateSpawnWarningDelay);
         ultimateSpawnWindowDuration = Mathf.Max(0.1f, ultimateSpawnWindowDuration);
         ultimateSpawnsPerWindow = Mathf.Max(0, ultimateSpawnsPerWindow);
         ultimateOuterMinRadius = Mathf.Max(ultimateOuterMinRadius, redRadius + ultimateTargetRadius);
@@ -625,6 +627,7 @@ public class PlayerCombatController : MonoBehaviour
                 FoxPrefab = foxPrefab,
                 SpawnMinDelay = ultimateSpawnMinDelay,
                 SpawnMaxDelay = ultimateSpawnMaxDelay,
+                SpawnWarningDelay = ultimateSpawnWarningDelay,
                 SpawnWindowDuration = ultimateSpawnWindowDuration,
                 SpawnsPerWindow = ultimateSpawnsPerWindow,
                 VisibleDuration = ultimateVisibleDuration,
@@ -640,6 +643,7 @@ public class PlayerCombatController : MonoBehaviour
         config.TargetSpawnFlash = ultimateAvailableFlash;
         config.SpawnMinDelay = Mathf.Max(0.1f, config.SpawnMinDelay);
         config.SpawnMaxDelay = Mathf.Max(config.SpawnMinDelay, config.SpawnMaxDelay);
+        config.SpawnWarningDelay = Mathf.Max(0f, config.SpawnWarningDelay);
         config.SpawnWindowDuration = Mathf.Max(0.1f, config.SpawnWindowDuration);
         config.SpawnsPerWindow = Mathf.Max(0, config.SpawnsPerWindow);
         config.VisibleDuration = Mathf.Max(0.1f, config.VisibleDuration);

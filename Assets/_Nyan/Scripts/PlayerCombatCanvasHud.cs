@@ -23,6 +23,7 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
     [Header("Feedback References")]
     [SerializeField] private Image releaseFlash;
     [SerializeField] private ScreenVignetteGraphic damageVignette;
+    [SerializeField] private ScreenFlash screenFlash;
 
     [Header("Health Bar")]
     [SerializeField] private Color healthyHealthColor = new Color(0.08f, 0.95f, 0.18f, 0.92f);
@@ -47,6 +48,7 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
     private bool hasPreviousHealthRatio;
     private bool warnedMissingReferences;
     private bool layoutConfigured;
+    private bool hadUltimateTarget;
     private Color ultimateIconBaseColor;
     private Color releaseFlashBaseColor;
 
@@ -200,6 +202,13 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
 
     private void UpdateUltimateTarget(PlayerCombatHudState state)
     {
+        if (state.HasUltimateTarget && !hadUltimateTarget && screenFlash != null)
+        {
+            screenFlash.Flash();
+        }
+
+        hadUltimateTarget = state.HasUltimateTarget;
+
         ultimateTarget.gameObject.SetActive(state.HasUltimateTarget);
         if (!state.HasUltimateTarget)
         {

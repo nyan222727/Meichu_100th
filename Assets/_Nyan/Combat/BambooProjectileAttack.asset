@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 13dd50e97c5c4c22b3ff65cc32c38cf0, type: 3}
   m_Name: BambooProjectileAttack
   m_EditorClassIdentifier: 
-  weakImpulse: 3
-  weakDamage: 1000
-  mediumImpulse: 3
-  mediumDamage: 4
-  strongImpulse: 3
-  strongDamage: 6
+  weakImpulse: 12
+  weakDamage: 2
+  mediumImpulse: 18
+  mediumDamage: 3
+  strongImpulse: 24
+  strongDamage: 4
