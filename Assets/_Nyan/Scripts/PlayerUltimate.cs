@@ -140,6 +140,7 @@ public sealed class PlayerUltimate
         targetViewportPosition = ScreenToViewport(ClampTargetToScreen(targetScreenPosition, config.TargetRadius, radiusScale));
         hasTarget = true;
         targetExpiresAt = Time.time + Mathf.Max(0.1f, config.VisibleDuration);
+        config.TargetSpawnFlash?.Flash();
 
         if (log)
         {
@@ -248,4 +249,5 @@ public struct PlayerUltimateConfig
     public float TargetFanMaxAngle;
     public float SpawnDistanceFromCamera;
     public int FoxDamage;
+    public ScreenFlash TargetSpawnFlash;
 }

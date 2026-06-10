@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
+using UnityEngine.UI;
 
 public class PlayerCombatController : MonoBehaviour
 {
@@ -59,6 +60,7 @@ public class PlayerCombatController : MonoBehaviour
     [FormerlySerializedAs("ultimateDefinition")]
     [SerializeField] private FoxUltimateSettings ultimateSettings;
     [SerializeField] private UltimateSkillManager ultimateSkillManager;
+    [SerializeField] private ScreenFlash ultimateAvailableFlash;
     [SerializeField] private GameObject foxPrefab;
     [SerializeField] private float ultimateSpawnMinDelay = 2.5f;
     [SerializeField] private float ultimateSpawnMaxDelay = 5.5f;
@@ -614,6 +616,8 @@ public class PlayerCombatController : MonoBehaviour
 
     private PlayerUltimateConfig GetUltimateConfig()
     {
+        ResolveUltimateAvailableFlash();
+
         PlayerUltimateConfig config = ultimateSettings != null
             ? ultimateSettings.ToConfig()
             : new PlayerUltimateConfig
@@ -633,6 +637,7 @@ public class PlayerCombatController : MonoBehaviour
                 FoxDamage = ultimateFoxDamage
             };
 
+        config.TargetSpawnFlash = ultimateAvailableFlash;
         config.SpawnMinDelay = Mathf.Max(0.1f, config.SpawnMinDelay);
         config.SpawnMaxDelay = Mathf.Max(config.SpawnMinDelay, config.SpawnMaxDelay);
         config.SpawnWindowDuration = Mathf.Max(0.1f, config.SpawnWindowDuration);
@@ -646,6 +651,62 @@ public class PlayerCombatController : MonoBehaviour
         config.SpawnDistanceFromCamera = Mathf.Max(0.01f, config.SpawnDistanceFromCamera);
         config.FoxDamage = Mathf.Max(0, config.FoxDamage);
         return config;
+    }
+
+    private void ResolveUltimateAvailableFlash()
+    {
+        if (ultimateAvailableFlash == null)
+        {
+            ultimateAvailableFlash = FindFirstObjectByType<ScreenFlash>(FindObjectsInactive.Include);
+        }
+
+        if (ultimateAvailableFlash == null)
+        {
+            ultimateAvailableFlash = CreateRuntimeUltimateAvailableFlash();
+        }
+
+        if (ultimateAvailableFlash != null)
+        {
+            ultimateAvailableFlash.gameObject.SetActive(true);
+        }
+    }
+
+    private ScreenFlash CreateRuntimeUltimateAvailableFlash()
+    {
+        Transform parent = canvasHud != null
+            ? canvasHud.transform
+            : FindFirstObjectByType<Canvas>(FindObjectsInactive.Include)?.transform;
+
+        if (parent == null)
+        {
+            return null;
+        }
+
+        GameObject flashObject = new GameObject(
+            "Ultimate Available Flash",
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(Image));
+
+        flashObject.transform.SetParent(parent, false);
+        flashObject.transform.SetAsLastSibling();
+
+        RectTransform rectTransform = flashObject.GetComponent<RectTransform>();
+        rectTransform.anchorMin = Vector2.zero;
+        rectTransform.anchorMax = Vector2.one;
+        rectTransform.offsetMin = Vector2.zero;
+        rectTransform.offsetMax = Vector2.zero;
+        rectTransform.pivot = new Vector2(0.5f, 0.5f);
+
+        Image image = flashObject.GetComponent<Image>();
+        image.color = new Color(1f, 0.85f, 0.08f, 0f);
+        image.raycastTarget = false;
+
+        ScreenFlash flash = flashObject.AddComponent<ScreenFlash>();
+        flash.flashColor = new Color(1f, 0.85f, 0.08f, 0.38f);
+        flash.fadeInTime = 0.04f;
+        flash.fadeOutTime = 0.22f;
+        return flash;
     }
 
     private PlayerCombatHudSettings GetHudSettings()

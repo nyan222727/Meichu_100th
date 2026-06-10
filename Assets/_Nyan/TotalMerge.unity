@@ -243,12 +243,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 44628047}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.31214878, y: 4.3351145, z: -3.667136}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 191855376}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &44628050
 MonoBehaviour:
@@ -636,6 +636,11 @@ MonoBehaviour:
   m_EnvironmentDepthMode: 1
   m_EnvironmentDepthTemporalSmoothing: 1
   m_OcclusionPreferenceMode: 2
+--- !u!4 &191855376 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4275045434701854263, guid: 09f2dc5fce0251c4f905942f432da96a, type: 3}
+  m_PrefabInstance: {fileID: 2100613220}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &337150319 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5147358522141917463, guid: 65607c4174280d34394bb85044799648, type: 3}
@@ -1843,7 +1848,6 @@ MonoBehaviour:
   ultimateTargetFanMaxAngle: 145
   ultimateSpawnDistanceFromCamera: 1.1
   ultimateFoxDamage: 150
-  screenFlash: {fileID: 547525818}
   playerHealth: {fileID: 1201066831}
   healthBarCenterGap: 0.055
   healthBarSideMargin: 0.035
@@ -2098,7 +2102,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4275045434701854263, guid: 09f2dc5fce0251c4f905942f432da96a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 44628049}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 09f2dc5fce0251c4f905942f432da96a, type: 3}
 --- !u!1 &2108841558
@@ -2423,7 +2430,6 @@ SceneRoots:
   - {fileID: 1808888713}
   - {fileID: 1404312280}
   - {fileID: 2143196630}
-  - {fileID: 44628049}
   - {fileID: 2100613220}
   - {fileID: 133640061}
   - {fileID: 1170462083}
