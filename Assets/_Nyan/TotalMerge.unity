@@ -920,11 +920,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 771206562455674050, guid: 3abbfbd08316a8d4ba6f0affd8744bb2, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 70
+      value: 300
       objectReference: {fileID: 0}
     - target: {fileID: 771206562455674050, guid: 3abbfbd08316a8d4ba6f0affd8744bb2, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 70
+      value: 300
       objectReference: {fileID: 0}
     - target: {fileID: 1690090829273239374, guid: 3abbfbd08316a8d4ba6f0affd8744bb2, type: 3}
       propertyPath: m_Name
@@ -1017,6 +1017,14 @@ PrefabInstance:
     - target: {fileID: 6233251255221019353, guid: 3abbfbd08316a8d4ba6f0affd8744bb2, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7620823688463333980, guid: 3abbfbd08316a8d4ba6f0affd8744bb2, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 300
+      objectReference: {fileID: 0}
+    - target: {fileID: 7620823688463333980, guid: 3abbfbd08316a8d4ba6f0affd8744bb2, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 300
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1901,6 +1909,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   projectileAttack: {fileID: 1923108516}
   rangedAttackSettings: {fileID: 11400000, guid: 2502ac8a2ecf4187adc06114736a2db8, type: 2}
+  combatUnlockedOnEnable: 0
   attackModeSplitX: 0.5
   useDynamicControlCenter: 1
   chargeCenterViewport: {x: 0.5, y: 0.02}
@@ -1930,7 +1939,7 @@ MonoBehaviour:
   ultimateSpawnWindowDuration: 300
   ultimateSpawnsPerWindow: 2
   ultimateVisibleDuration: 1.1
-  ultimateTargetRadius: 0.045
+  ultimateTargetRadius: 0.1923077
   ultimateOuterMinRadius: 0.545
   ultimateOuterMaxRadius: 0.545
   ultimateTargetFanMinAngle: 35

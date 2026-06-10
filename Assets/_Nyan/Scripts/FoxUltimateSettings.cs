@@ -10,7 +10,8 @@ public class FoxUltimateSettings : ScriptableObject
     [SerializeField, Min(0.1f)] private float spawnWindowDuration = 300f;
     [SerializeField, Min(0)] private int spawnsPerWindow = 2;
     [SerializeField] private float visibleDuration = 1.1f;
-    [SerializeField] private float targetRadius = 0.045f;
+    [Tooltip("Normalized by the shorter screen side. 0.1923 is a 150px diameter target on a 390px-wide phone design.")]
+    [SerializeField] private float targetRadius = 0.1923077f;
     [SerializeField] private float outerMinRadius = 0.35f;
     [SerializeField] private float outerMaxRadius = 0.43f;
     [SerializeField, Range(0f, 180f)] private float targetFanMinAngle = 35f;

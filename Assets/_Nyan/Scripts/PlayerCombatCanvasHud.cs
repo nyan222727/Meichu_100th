@@ -215,7 +215,28 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
             return;
         }
 
+        Vector2 rootSize = GetRootSize();
+        float targetDiameter = Mathf.Max(1f, state.UltimateTargetRadius * Mathf.Min(rootSize.x, rootSize.y) * 2f);
+        ultimateTarget.pivot = new Vector2(0.5f, 0.5f);
+        ultimateTarget.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, targetDiameter);
+        ultimateTarget.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, targetDiameter);
         SetViewportPosition(ultimateTarget, state.UltimateTargetViewportPosition);
+
+        if (ultimateTargetBackground != null)
+        {
+            ultimateTargetBackground.gameObject.SetActive(false);
+        }
+
+        if (ultimateTargetRing != null)
+        {
+            ultimateTargetRing.gameObject.SetActive(false);
+        }
+
+        RectTransform iconTransform = ultimateTargetIcon.rectTransform;
+        iconTransform.anchorMin = Vector2.zero;
+        iconTransform.anchorMax = Vector2.one;
+        iconTransform.offsetMin = Vector2.zero;
+        iconTransform.offsetMax = Vector2.zero;
 
         float pulse = Mathf.Lerp(0.72f, 1f, Mathf.PingPong(Time.time * 8f, 1f));
         Color iconColor = ultimateIconBaseColor;

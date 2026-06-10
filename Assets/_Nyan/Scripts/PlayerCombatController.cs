@@ -74,7 +74,7 @@ public class PlayerCombatController : MonoBehaviour
     [SerializeField, Min(0.1f)] private float ultimateSpawnWindowDuration = 300f;
     [SerializeField, Min(0)] private int ultimateSpawnsPerWindow = 2;
     [SerializeField] private float ultimateVisibleDuration = 1.1f;
-    [SerializeField] private float ultimateTargetRadius = 0.045f;
+    [SerializeField] private float ultimateTargetRadius = 0.1923077f;
     [SerializeField] private float ultimateOuterMinRadius = 0.35f;
     [SerializeField] private float ultimateOuterMaxRadius = 0.43f;
     [SerializeField, Range(0f, 180f)] private float ultimateTargetFanMinAngle = 35f;
@@ -159,7 +159,7 @@ public class PlayerCombatController : MonoBehaviour
         combatUnlocked = combatUnlockedOnEnable;
         if (canvasHud != null)
         {
-            canvasHud.SetVisible(combatUnlocked);
+            canvasHud.SetVisible(true);
         }
 
         GameAudioController.PlayGameMusic();
@@ -201,7 +201,7 @@ public class PlayerCombatController : MonoBehaviour
         EnsureCanvasHud();
         if (canvasHud != null)
         {
-            canvasHud.SetVisible(combatUnlocked);
+            canvasHud.SetVisible(true);
         }
 
         ultimate.Reset();
@@ -232,9 +232,10 @@ public class PlayerCombatController : MonoBehaviour
 
             if (canvasHud != null)
             {
-                canvasHud.SetVisible(false);
+                canvasHud.SetVisible(true);
             }
 
+            UpdateCanvasHud();
             return;
         }
 

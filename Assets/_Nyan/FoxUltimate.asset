@@ -18,8 +18,8 @@ MonoBehaviour:
   spawnWarningDelay: 0.35
   spawnWindowDuration: 60
   spawnsPerWindow: 1
-  visibleDuration: 1.1
-  targetRadius: 0.045
+  visibleDuration: 0.5
+  targetRadius: 0.1923077
   outerMinRadius: 0.35
   outerMaxRadius: 0.43
   targetFanMinAngle: 35
