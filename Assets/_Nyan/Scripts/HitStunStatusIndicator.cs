@@ -1,10 +1,12 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public sealed class HitStunStatusIndicator : MonoBehaviour
 {
     private const int RingSegments = 28;
 
-    [SerializeField] private Vector3 worldOffset = new Vector3(0f, 1.45f, 0f);
+    [SerializeField] private Vector3 worldOffset = new Vector3(0f, 1.7f, 0f);
+    [SerializeField, Min(0f)] private float cameraForwardOffset = 0.18f;
     [SerializeField, Min(0.01f)] private float radius = 0.18f;
     [SerializeField, Min(0.001f)] private float lineWidth = 0.018f;
     [SerializeField] private Color clockColor = new Color(0.2f, 0.85f, 1f, 1f);
@@ -114,19 +116,22 @@ public sealed class HitStunStatusIndicator : MonoBehaviour
 
     private static Material CreateLineMaterial()
     {
-        Shader shader = Shader.Find("Sprites/Default");
+        Shader shader = Shader.Find("Hidden/Internal-Colored");
+        if (shader == null)
+        {
+            shader = Shader.Find("Sprites/Default");
+        }
+
         if (shader == null)
         {
             shader = Shader.Find("Universal Render Pipeline/Unlit");
         }
 
-        if (shader == null)
-        {
-            shader = Shader.Find("Hidden/Internal-Colored");
-        }
-
         Material material = new Material(shader);
         material.hideFlags = HideFlags.HideAndDontSave;
+        material.renderQueue = (int)RenderQueue.Overlay;
+        material.SetInt("_ZTest", (int)CompareFunction.Always);
+        material.SetInt("_ZWrite", 0);
         return material;
     }
 
@@ -146,6 +151,7 @@ public sealed class HitStunStatusIndicator : MonoBehaviour
         line.material = lineMaterial;
         line.startColor = clockColor;
         line.endColor = clockColor;
+        line.sortingOrder = short.MaxValue;
         return line;
     }
 
@@ -160,19 +166,26 @@ public sealed class HitStunStatusIndicator : MonoBehaviour
 
     private void UpdateTransform()
     {
-        clockRoot.localPosition = worldOffset;
         clockRoot.localScale = Vector3.one;
 
         Camera targetCamera = Camera.main;
         if (targetCamera == null)
         {
+            clockRoot.position = transform.position + worldOffset;
             return;
         }
 
-        Vector3 toCamera = clockRoot.position - targetCamera.transform.position;
+        Vector3 targetPosition = transform.position + worldOffset;
+        Vector3 toCamera = targetPosition - targetCamera.transform.position;
         if (toCamera.sqrMagnitude > 0.001f)
         {
-            clockRoot.rotation = Quaternion.LookRotation(toCamera.normalized, Vector3.up);
+            Vector3 toCameraDirection = toCamera.normalized;
+            clockRoot.position = targetPosition - toCameraDirection * cameraForwardOffset;
+            clockRoot.rotation = Quaternion.LookRotation(toCameraDirection, Vector3.up);
+        }
+        else
+        {
+            clockRoot.position = targetPosition;
         }
     }
 

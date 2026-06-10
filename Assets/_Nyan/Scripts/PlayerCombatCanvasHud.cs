@@ -5,8 +5,10 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
 {
     [Header("Canvas References")]
     [SerializeField] private RectTransform root;
+    [SerializeField] private Text bossHealthLabel;
     [SerializeField] private Image healthBackground;
     [SerializeField] private Image healthFill;
+    [SerializeField] private Text playerHealthText;
     [SerializeField] private RectTransform crosshair;
 
     [Header("Charge Control")]
@@ -24,9 +26,11 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
 
     [Header("Health Bar")]
     [SerializeField] private Color healthyHealthColor = new Color(0.08f, 0.95f, 0.18f, 0.92f);
-    [SerializeField] private Color warningHealthColor = new Color(1f, 0.78f, 0.22f, 0.94f);
+    [SerializeField] private Color warningHealthColor = new Color(1f, 0.82f, 0.4f, 0.92f);
     [SerializeField] private Color criticalHealthColor = new Color(1f, 0.16f, 0.12f, 0.96f);
-    [SerializeField] private Color healthBackgroundColor = new Color(0f, 0f, 0f, 0.58f);
+    [SerializeField] private Color healthBackgroundColor = new Color(1f, 1f, 1f, 0.3f);
+    [SerializeField] private Color playerHealthTextColor = new Color(1f, 1f, 1f, 0.3f);
+    [SerializeField] private Color bossHealthLabelColor = new Color(1f, 1f, 1f, 0.3f);
 
     [Header("Runtime Behaviour")]
     [SerializeField] private float releaseFlashDuration = 0.26f;
@@ -42,11 +46,16 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
     private float previousHealthRatio = 1f;
     private bool hasPreviousHealthRatio;
     private bool warnedMissingReferences;
+    private bool layoutConfigured;
     private Color ultimateIconBaseColor;
     private Color releaseFlashBaseColor;
 
     private void Awake()
     {
+        EnsureBossHealthLabel();
+        EnsurePlayerHealthText();
+        ConfigureLayout();
+
         if (!ValidateReferences())
         {
             return;
@@ -64,6 +73,10 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
 
     public void SetVisible(bool visible)
     {
+        EnsureBossHealthLabel();
+        EnsurePlayerHealthText();
+        ConfigureLayout();
+
         if (!ValidateReferences())
         {
             return;
@@ -74,12 +87,17 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
 
     public void Apply(PlayerCombatHudSettings settings, PlayerCombatHudState state)
     {
+        EnsureBossHealthLabel();
+        EnsurePlayerHealthText();
+        ConfigureLayout();
+
         if (!ValidateReferences() || !root.gameObject.activeSelf)
         {
             return;
         }
 
-        UpdateHealth(state.PlayerHealthRatio);
+        UpdateBossHealth(state.HasBossHealth, state.BossHealthRatio);
+        UpdatePlayerHealthText(state.PlayerCurrentHealth, state.PlayerMaxHealth);
         UpdateDamageVignette(state.PlayerHealthRatio);
         UpdateCrosshair(settings.AimViewportPosition);
         chargeControl.Apply(settings, state, GetRootSize());
@@ -94,9 +112,18 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
         releaseFlashStartedAt = Time.time;
     }
 
-    private void UpdateHealth(float healthRatio)
+    private void UpdateBossHealth(bool hasBossHealth, float healthRatio)
     {
+        bossHealthLabel.gameObject.SetActive(hasBossHealth);
+        healthBackground.gameObject.SetActive(hasBossHealth);
+        if (!hasBossHealth)
+        {
+            return;
+        }
+
         healthRatio = Mathf.Clamp01(healthRatio);
+        bossHealthLabel.text = "panda";
+        bossHealthLabel.color = bossHealthLabelColor;
         healthBackground.color = healthBackgroundColor;
         healthFill.color = GetHealthColor(healthRatio);
 
@@ -105,6 +132,18 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
         fillRect.anchorMax = new Vector2(healthRatio, 1f);
         fillRect.offsetMin = Vector2.zero;
         fillRect.offsetMax = Vector2.zero;
+    }
+
+    private void UpdatePlayerHealthText(int currentHealth, int maxHealth)
+    {
+        int safeMax = Mathf.Max(1, maxHealth);
+        int safeCurrent = Mathf.Clamp(currentHealth, 0, safeMax);
+        float healthRatio = safeCurrent / (float)safeMax;
+        Color textColor = GetHealthColor(healthRatio);
+        textColor.a = Mathf.Max(playerHealthTextColor.a, 0.86f, textColor.a);
+
+        playerHealthText.text = safeCurrent.ToString();
+        playerHealthText.color = textColor;
     }
 
     private void UpdateDamageVignette(float healthRatio)
@@ -196,8 +235,10 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
     private bool ValidateReferences()
     {
         bool valid = root != null
+            && bossHealthLabel != null
             && healthBackground != null
             && healthFill != null
+            && playerHealthText != null
             && crosshair != null
             && chargeControl != null
             && chargeControl.IsValid()
@@ -215,6 +256,183 @@ public sealed class PlayerCombatCanvasHud : MonoBehaviour
         }
 
         return valid;
+    }
+
+    private void EnsureBossHealthLabel()
+    {
+        if (bossHealthLabel != null || root == null)
+        {
+            return;
+        }
+
+        GameObject textObject = new GameObject("Boss Health Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+        textObject.transform.SetParent(root, false);
+
+        bossHealthLabel = textObject.GetComponent<Text>();
+        bossHealthLabel.text = "panda";
+        bossHealthLabel.font = GetBuiltinFont();
+        bossHealthLabel.fontSize = 16;
+        bossHealthLabel.fontStyle = FontStyle.Bold;
+        bossHealthLabel.alignment = TextAnchor.MiddleCenter;
+        bossHealthLabel.raycastTarget = false;
+        bossHealthLabel.color = bossHealthLabelColor;
+    }
+
+    private void EnsurePlayerHealthText()
+    {
+        if (playerHealthText != null || root == null)
+        {
+            return;
+        }
+
+        GameObject textObject = new GameObject("Player Health Text", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+        textObject.transform.SetParent(root, false);
+
+        playerHealthText = textObject.GetComponent<Text>();
+        playerHealthText.text = "100";
+        playerHealthText.font = GetBuiltinFont();
+        playerHealthText.fontSize = 34;
+        playerHealthText.fontStyle = FontStyle.Bold;
+        playerHealthText.alignment = TextAnchor.MiddleRight;
+        playerHealthText.raycastTarget = false;
+        playerHealthText.color = healthyHealthColor;
+
+        Outline outline = textObject.AddComponent<Outline>();
+        outline.effectColor = new Color(0f, 0f, 0f, 0.58f);
+        outline.effectDistance = new Vector2(1.5f, -1.5f);
+    }
+
+    private void ConfigureLayout()
+    {
+        if (layoutConfigured || root == null)
+        {
+            return;
+        }
+
+        ConfigureBossHealthBar();
+        ConfigureBossHealthLabel();
+        ConfigurePlayerHealthText();
+        ConfigurePauseButton();
+        layoutConfigured = true;
+    }
+
+    private void ConfigureBossHealthBar()
+    {
+        if (healthBackground == null)
+        {
+            return;
+        }
+
+        RectTransform rectTransform = healthBackground.rectTransform;
+        rectTransform.anchorMin = new Vector2(0.5f, 1f);
+        rectTransform.anchorMax = new Vector2(0.5f, 1f);
+        rectTransform.pivot = new Vector2(0.5f, 1f);
+        rectTransform.anchoredPosition = new Vector2(0f, -48f);
+        rectTransform.sizeDelta = new Vector2(260f, 18f);
+    }
+
+    private void ConfigureBossHealthLabel()
+    {
+        if (bossHealthLabel == null)
+        {
+            return;
+        }
+
+        RectTransform rectTransform = bossHealthLabel.rectTransform;
+        rectTransform.anchorMin = new Vector2(0.5f, 1f);
+        rectTransform.anchorMax = new Vector2(0.5f, 1f);
+        rectTransform.pivot = new Vector2(0.5f, 1f);
+        rectTransform.anchoredPosition = new Vector2(0f, -25f);
+        rectTransform.sizeDelta = new Vector2(120f, 20f);
+    }
+
+    private void ConfigurePlayerHealthText()
+    {
+        if (playerHealthText == null)
+        {
+            return;
+        }
+
+        Outline outline = playerHealthText.GetComponent<Outline>();
+        if (outline == null)
+        {
+            outline = playerHealthText.gameObject.AddComponent<Outline>();
+        }
+
+        outline.effectColor = new Color(0f, 0f, 0f, 0.58f);
+        outline.effectDistance = new Vector2(1.5f, -1.5f);
+        playerHealthText.fontSize = 34;
+
+        RectTransform rectTransform = playerHealthText.rectTransform;
+        rectTransform.anchorMin = new Vector2(1f, 0f);
+        rectTransform.anchorMax = new Vector2(1f, 0f);
+        rectTransform.pivot = new Vector2(1f, 0f);
+        rectTransform.anchoredPosition = new Vector2(-24f, 22f);
+        rectTransform.sizeDelta = new Vector2(112f, 42f);
+    }
+
+    private void ConfigurePauseButton()
+    {
+        Transform pauseButton = root.Find("PauseButton");
+        if (pauseButton == null)
+        {
+            return;
+        }
+
+        RectTransform rectTransform = pauseButton.GetComponent<RectTransform>();
+        if (rectTransform == null)
+        {
+            return;
+        }
+
+        EnsurePauseHamburgerIcon(pauseButton);
+
+        rectTransform.anchorMin = new Vector2(1f, 1f);
+        rectTransform.anchorMax = new Vector2(1f, 1f);
+        rectTransform.pivot = new Vector2(1f, 1f);
+        rectTransform.anchoredPosition = new Vector2(-18f, -26f);
+        rectTransform.sizeDelta = new Vector2(42f, 34f);
+    }
+
+    private static void EnsurePauseHamburgerIcon(Transform pauseButton)
+    {
+        foreach (Text label in pauseButton.GetComponentsInChildren<Text>(true))
+        {
+            label.gameObject.SetActive(false);
+        }
+
+        if (pauseButton.Find("Hamburger Line 1") != null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < 3; i++)
+        {
+            GameObject lineObject = new GameObject($"Hamburger Line {i + 1}", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            lineObject.transform.SetParent(pauseButton, false);
+
+            RectTransform lineRect = lineObject.GetComponent<RectTransform>();
+            lineRect.anchorMin = new Vector2(0.5f, 0.5f);
+            lineRect.anchorMax = new Vector2(0.5f, 0.5f);
+            lineRect.pivot = new Vector2(0.5f, 0.5f);
+            lineRect.anchoredPosition = new Vector2(0f, 6f - i * 6f);
+            lineRect.sizeDelta = new Vector2(18f, 2f);
+
+            Image lineImage = lineObject.GetComponent<Image>();
+            lineImage.color = new Color(1f, 1f, 1f, 0.86f);
+            lineImage.raycastTarget = false;
+        }
+    }
+
+    private static Font GetBuiltinFont()
+    {
+        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        if (font == null)
+        {
+            font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        }
+
+        return font;
     }
 
     private Vector2 GetRootSize()

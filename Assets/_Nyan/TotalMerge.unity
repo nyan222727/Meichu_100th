@@ -963,12 +963,7 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 65607c4174280d34394bb85044799648, type: 3}
---- !u!1 &755193873 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7122275898668739045, guid: 65607c4174280d34394bb85044799648, type: 3}
-  m_PrefabInstance: {fileID: 490520611}
-  m_PrefabAsset: {fileID: 0}
---- !u!1001 &813255501
+--- !u!1001 &568081104
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -1065,10 +1060,10 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3abbfbd08316a8d4ba6f0affd8744bb2, type: 3}
---- !u!114 &813255502 stripped
+--- !u!114 &568081105 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1850881747583443945, guid: 3abbfbd08316a8d4ba6f0affd8744bb2, type: 3}
-  m_PrefabInstance: {fileID: 813255501}
+  m_PrefabInstance: {fileID: 568081104}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -1076,10 +1071,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93cf86ec04d24d0cac556944de452ad1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!224 &813255503 stripped
+--- !u!224 &568081106 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 6233251255221019353, guid: 3abbfbd08316a8d4ba6f0affd8744bb2, type: 3}
-  m_PrefabInstance: {fileID: 813255501}
+  m_PrefabInstance: {fileID: 568081104}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &755193873 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7122275898668739045, guid: 65607c4174280d34394bb85044799648, type: 3}
+  m_PrefabInstance: {fileID: 490520611}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &892627220
 GameObject:
@@ -1777,7 +1777,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 813255503}
+  - {fileID: 568081106}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1923108515
@@ -1832,7 +1832,7 @@ MonoBehaviour:
   healthBarSideMargin: 0.035
   healthBarWidth: 12
   healthBarAlpha: 0.72
-  canvasHud: {fileID: 813255502}
+  canvasHud: {fileID: 568081105}
   logAttacks: 1
   showDebugOverlay: 0
   overlaySegments: 96

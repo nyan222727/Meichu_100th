@@ -69,10 +69,18 @@ public static class BuildPlayerCombatHudPrefab
         Stretch(damageVignette.rectTransform);
         damageVignette.gameObject.SetActive(false);
 
-        Image healthBackground = CreateImage("Health Bar", content, null, new Color(0f, 0f, 0f, 0.53f));
-        SetTopCenter(healthBackground.rectTransform, new Vector2(0f, -45f), new Vector2(310f, 30f));
-        Image healthFill = CreateImage("Fill", healthBackground.transform, null, new Color(0f, 1f, 0.03f, 0.88f));
+        Text bossHealthLabel = CreateText("Boss Health Label", content, "panda", new Color(1f, 1f, 1f, 0.3f), 16);
+        SetTopCenter(bossHealthLabel.rectTransform, new Vector2(0f, -25f), new Vector2(120f, 20f));
+
+        Image healthBackground = CreateImage("Boss Health Bar", content, null, new Color(1f, 1f, 1f, 0.3f));
+        SetTopCenter(healthBackground.rectTransform, new Vector2(0f, -48f), new Vector2(260f, 18f));
+        Image healthFill = CreateImage("Fill", healthBackground.transform, null, new Color(0.08f, 0.95f, 0.18f, 0.92f));
         Stretch(healthFill.rectTransform);
+
+        Text playerHealthText = CreateText("Player Health Text", content, "100", new Color(0.08f, 0.95f, 0.18f, 0.92f), 34);
+        playerHealthText.alignment = TextAnchor.MiddleRight;
+        AddTextOutline(playerHealthText.gameObject, new Color(0f, 0f, 0f, 0.58f));
+        SetBottomRight(playerHealthText.rectTransform, new Vector2(-24f, 22f), new Vector2(112f, 42f));
 
         RectTransform crosshair = CreateRect("Crosshair", content);
         SetCenter(crosshair, Vector2.zero, new Vector2(35f, 35f));
@@ -106,42 +114,91 @@ public static class BuildPlayerCombatHudPrefab
         Button pauseButton = CreateButton(
             "PauseButton",
             content,
-            "Menu",
+            "",
             new Color(0f, 0f, 0f, 0.55f),
             new Color(1f, 1f, 1f, 0.96f));
-        SetTopRight(pauseButton.GetComponent<RectTransform>(), new Vector2(-58f, -42f), new Vector2(72f, 38f));
+        SetTopRight(pauseButton.GetComponent<RectTransform>(), new Vector2(-18f, -26f), new Vector2(42f, 34f));
+        AddHamburgerIcon(pauseButton.transform);
 
-        Image pausePanelImage = CreateImage("PausePanel", content, null, new Color(0f, 0f, 0f, 0.68f));
-        RectTransform pausePanel = pausePanelImage.rectTransform;
-        SetTopRight(pausePanel, new Vector2(-112f, -106f), new Vector2(176f, 126f));
+        Image pausePanelImage = CreateImage("PausePanel", prefabSource.transform, null, new Color(0f, 0f, 0f, 0.58f));
+        pausePanelImage.raycastTarget = true;
+        Stretch(pausePanelImage.rectTransform);
+
+        RectTransform pauseCard = CreateRect("Card", pausePanelImage.transform);
+        SetCenter(pauseCard, Vector2.zero, new Vector2(300f, 230f));
+        Image pauseCardImage = pauseCard.gameObject.AddComponent<Image>();
+        pauseCardImage.color = new Color(0.03f, 0.03f, 0.03f, 0.82f);
+        pauseCardImage.raycastTarget = false;
+
+        Text pauseTitle = CreateText("Title", pauseCard, "PAUSED", new Color(1f, 1f, 1f, 0.9f), 36);
+        SetCenter(pauseTitle.rectTransform, new Vector2(0f, 65f), new Vector2(260f, 48f));
+
+        Text pauseMessage = CreateText("Message", pauseCard, "Game paused", new Color(1f, 1f, 1f, 0.72f), 18);
+        SetCenter(pauseMessage.rectTransform, new Vector2(0f, 24f), new Vector2(250f, 34f));
 
         Button restartButton = CreateButton(
             "RestartButton",
-            pausePanel,
+            pauseCard,
             "Restart",
-            new Color(0.12f, 0.12f, 0.12f, 0.92f),
-            Color.white);
-        SetTopCenter(restartButton.GetComponent<RectTransform>(), new Vector2(0f, -18f), new Vector2(138f, 38f));
+            new Color(1f, 1f, 1f, 0.18f),
+            new Color(1f, 1f, 1f, 0.9f));
+        SetCenter(restartButton.GetComponent<RectTransform>(), new Vector2(0f, -34f), new Vector2(190f, 44f));
 
         Button backToMenuButton = CreateButton(
             "BackToMenuButton",
-            pausePanel,
+            pauseCard,
             "Menu",
-            new Color(0.12f, 0.12f, 0.12f, 0.92f),
-            Color.white);
-        SetTopCenter(backToMenuButton.GetComponent<RectTransform>(), new Vector2(0f, -70f), new Vector2(138f, 38f));
+            new Color(1f, 1f, 1f, 0.18f),
+            new Color(1f, 1f, 1f, 0.9f));
+        SetCenter(backToMenuButton.GetComponent<RectTransform>(), new Vector2(0f, -88f), new Vector2(190f, 44f));
+
+        Image resultPanelImage = CreateImage("ResultPanel", prefabSource.transform, null, new Color(0f, 0f, 0f, 0.58f));
+        resultPanelImage.raycastTarget = true;
+        Stretch(resultPanelImage.rectTransform);
+        CanvasGroup resultPanel = resultPanelImage.gameObject.AddComponent<CanvasGroup>();
+
+        RectTransform resultCard = CreateRect("Card", resultPanelImage.transform);
+        SetCenter(resultCard, Vector2.zero, new Vector2(300f, 230f));
+        Image resultCardImage = resultCard.gameObject.AddComponent<Image>();
+        resultCardImage.color = new Color(0.03f, 0.03f, 0.03f, 0.82f);
+        resultCardImage.raycastTarget = false;
+
+        Text resultTitle = CreateText("Title", resultCard, "FAILED", new Color(1f, 0.71f, 0.37f, 0.95f), 36);
+        SetCenter(resultTitle.rectTransform, new Vector2(0f, 65f), new Vector2(260f, 48f));
+
+        Text resultMessage = CreateText("Message", resultCard, "Player defeated", new Color(1f, 1f, 1f, 0.72f), 18);
+        SetCenter(resultMessage.rectTransform, new Vector2(0f, 24f), new Vector2(250f, 34f));
+
+        Button resultRestartButton = CreateButton(
+            "ResultRestartButton",
+            resultCard,
+            "Restart",
+            new Color(1f, 1f, 1f, 0.18f),
+            new Color(1f, 1f, 1f, 0.9f));
+        SetCenter(resultRestartButton.GetComponent<RectTransform>(), new Vector2(0f, -34f), new Vector2(190f, 44f));
+
+        Button resultMenuButton = CreateButton(
+            "ResultMenuButton",
+            resultCard,
+            "Menu",
+            new Color(1f, 1f, 1f, 0.18f),
+            new Color(1f, 1f, 1f, 0.9f));
+        SetCenter(resultMenuButton.GetComponent<RectTransform>(), new Vector2(0f, -88f), new Vector2(190f, 44f));
 
         ultimateTarget.gameObject.SetActive(false);
         releaseFlash.gameObject.SetActive(false);
-        pausePanel.gameObject.SetActive(false);
+        pausePanelImage.gameObject.SetActive(false);
+        resultPanelImage.gameObject.SetActive(false);
         content.gameObject.SetActive(false);
 
         PlayerCombatCanvasHud hud = prefabSource.GetComponent<PlayerCombatCanvasHud>();
         AssignReferences(
             hud,
             content,
+            bossHealthLabel,
             healthBackground,
             healthFill,
+            playerHealthText,
             crosshair,
             chargeControl,
             ultimateTarget,
@@ -155,9 +212,14 @@ public static class BuildPlayerCombatHudPrefab
         AssignPauseReferences(
             pauseController,
             pauseButton,
-            pausePanel.gameObject,
+            pausePanelImage.gameObject,
             restartButton,
-            backToMenuButton);
+            backToMenuButton,
+            resultPanel,
+            resultTitle,
+            resultMessage,
+            resultRestartButton,
+            resultMenuButton);
 
         GameObject prefabAsset = PrefabUtility.SaveAsPrefabAsset(prefabSource, PrefabPath);
         Object.DestroyImmediate(prefabSource);
@@ -337,8 +399,10 @@ public static class BuildPlayerCombatHudPrefab
     private static void AssignReferences(
         PlayerCombatCanvasHud hud,
         RectTransform content,
+        Text bossHealthLabel,
         Image healthBackground,
         Image healthFill,
+        Text playerHealthText,
         RectTransform crosshair,
         PlayerChargeControlView chargeControl,
         RectTransform ultimateTarget,
@@ -350,8 +414,10 @@ public static class BuildPlayerCombatHudPrefab
     {
         SerializedObject serializedHud = new SerializedObject(hud);
         SetReference(serializedHud, "root", content);
+        SetReference(serializedHud, "bossHealthLabel", bossHealthLabel);
         SetReference(serializedHud, "healthBackground", healthBackground);
         SetReference(serializedHud, "healthFill", healthFill);
+        SetReference(serializedHud, "playerHealthText", playerHealthText);
         SetReference(serializedHud, "crosshair", crosshair);
         SetReference(serializedHud, "chargeControl", chargeControl);
         SetReference(serializedHud, "ultimateTarget", ultimateTarget);
@@ -368,13 +434,23 @@ public static class BuildPlayerCombatHudPrefab
         Button pauseButton,
         GameObject pausePanel,
         Button restartButton,
-        Button backToMenuButton)
+        Button backToMenuButton,
+        CanvasGroup resultPanel,
+        Text resultTitle,
+        Text resultMessage,
+        Button resultRestartButton,
+        Button resultMenuButton)
     {
         SerializedObject serializedPause = new SerializedObject(pauseController);
         SetReference(serializedPause, "pauseButton", pauseButton);
         SetReference(serializedPause, "pausePanel", pausePanel);
         SetReference(serializedPause, "restartButton", restartButton);
         SetReference(serializedPause, "backToMenuButton", backToMenuButton);
+        SetReference(serializedPause, "resultPanel", resultPanel);
+        SetReference(serializedPause, "resultTitleText", resultTitle);
+        SetReference(serializedPause, "resultMessageText", resultMessage);
+        SetReference(serializedPause, "resultRestartButton", resultRestartButton);
+        SetReference(serializedPause, "resultMenuButton", resultMenuButton);
         serializedPause.ApplyModifiedPropertiesWithoutUndo();
     }
 
@@ -423,6 +499,31 @@ public static class BuildPlayerCombatHudPrefab
         text.alignment = TextAnchor.MiddleCenter;
 
         return button;
+    }
+
+    private static void AddHamburgerIcon(Transform parent)
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            Image line = CreateImage(
+                $"Hamburger Line {i + 1}",
+                parent,
+                null,
+                new Color(1f, 1f, 1f, 0.86f));
+            SetCenter(line.rectTransform, new Vector2(0f, 6f - i * 6f), new Vector2(18f, 2f));
+        }
+    }
+
+    private static void AddTextOutline(GameObject textObject, Color color)
+    {
+        Outline outline = textObject.GetComponent<Outline>();
+        if (outline == null)
+        {
+            outline = textObject.AddComponent<Outline>();
+        }
+
+        outline.effectColor = color;
+        outline.effectDistance = new Vector2(1.5f, -1.5f);
     }
 
     private static PowerArrowGraphic CreatePowerArrow(string name, Transform parent)
@@ -507,6 +608,15 @@ public static class BuildPlayerCombatHudPrefab
         rectTransform.anchorMin = new Vector2(1f, 1f);
         rectTransform.anchorMax = new Vector2(1f, 1f);
         rectTransform.pivot = new Vector2(1f, 1f);
+        rectTransform.anchoredPosition = position;
+        rectTransform.sizeDelta = size;
+    }
+
+    private static void SetBottomRight(RectTransform rectTransform, Vector2 position, Vector2 size)
+    {
+        rectTransform.anchorMin = new Vector2(1f, 0f);
+        rectTransform.anchorMax = new Vector2(1f, 0f);
+        rectTransform.pivot = new Vector2(1f, 0f);
         rectTransform.anchoredPosition = position;
         rectTransform.sizeDelta = size;
     }

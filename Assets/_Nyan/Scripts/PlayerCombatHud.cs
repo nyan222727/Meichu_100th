@@ -48,19 +48,20 @@ public sealed class PlayerCombatHud
         float rightEdge = Mathf.Clamp(Screen.width - sideMargin, centerX, Screen.width);
         float leftInner = Mathf.Max(leftEdge, centerX - centerGap);
         float rightInner = Mathf.Min(rightEdge, centerX + centerGap);
-        float leftHealthLength = Mathf.Max(0f, leftInner - leftEdge) * state.PlayerHealthRatio;
-        float rightHealthLength = Mathf.Max(0f, rightEdge - rightInner) * state.PlayerHealthRatio;
+        float bossHealthRatio = state.HasBossHealth ? state.BossHealthRatio : 0f;
+        float leftHealthLength = Mathf.Max(0f, leftInner - leftEdge) * bossHealthRatio;
+        float rightHealthLength = Mathf.Max(0f, rightEdge - rightInner) * bossHealthRatio;
 
         DrawLine(new Vector2(0f, y), new Vector2(Screen.width, y), new Color(0f, 0f, 0f, 0.88f), settings.OverlayLineWidth + 2f);
         DrawLine(new Vector2(leftEdge, y), new Vector2(leftInner, y), new Color(0.12f, 0f, 0f, 0.62f), settings.HealthBarWidth + 3f);
         DrawLine(new Vector2(rightInner, y), new Vector2(rightEdge, y), new Color(0.12f, 0f, 0f, 0.62f), settings.HealthBarWidth + 3f);
 
-        if (state.PlayerHealthRatio <= 0f)
+        if (bossHealthRatio <= 0f)
         {
             return;
         }
 
-        Color healthColor = GetPlayerHealthColor(settings, state.PlayerHealthRatio);
+        Color healthColor = GetPlayerHealthColor(settings, bossHealthRatio);
         DrawLine(new Vector2(leftInner - leftHealthLength, y), new Vector2(leftInner, y), healthColor, settings.HealthBarWidth);
         DrawLine(new Vector2(rightInner, y), new Vector2(rightInner + rightHealthLength, y), healthColor, settings.HealthBarWidth);
         DrawLine(new Vector2(leftInner - leftHealthLength, y - settings.HealthBarWidth * 0.22f), new Vector2(leftInner, y - settings.HealthBarWidth * 0.22f), new Color(1f, 0.55f, 0.45f, settings.HealthBarAlpha * 0.35f), Mathf.Max(1f, settings.HealthBarWidth * 0.18f));
@@ -270,6 +271,10 @@ public struct PlayerCombatHudState
     public float DisplacementRatio;
     public bool HitStunReady;
     public float PlayerHealthRatio;
+    public int PlayerCurrentHealth;
+    public int PlayerMaxHealth;
+    public bool HasBossHealth;
+    public float BossHealthRatio;
     public bool HasUltimateTarget;
     public Vector2 UltimateTargetViewportPosition;
     public float UltimateTargetRadius;

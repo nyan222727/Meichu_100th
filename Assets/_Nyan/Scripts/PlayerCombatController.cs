@@ -100,6 +100,8 @@ public class PlayerCombatController : MonoBehaviour
     private bool hasPointerPosition;
     private Vector2 lastPointerViewportPosition;
     private Vector2 activeChargeCenterViewport;
+    private PandaBossAI cachedBossAi;
+    private PandaHealth cachedPandaHealth;
 
     private void OnValidate()
     {
@@ -544,6 +546,48 @@ public class PlayerCombatController : MonoBehaviour
         return playerHealth != null ? playerHealth.HealthRatio : 1f;
     }
 
+    private int GetPlayerCurrentHealth()
+    {
+        return playerHealth != null ? playerHealth.CurrentHealth : 0;
+    }
+
+    private int GetPlayerMaxHealth()
+    {
+        return playerHealth != null ? playerHealth.MaxHealth : 1;
+    }
+
+    private bool TryGetBossHealthRatio(out float bossHealthRatio)
+    {
+        if (cachedBossAi == null || cachedBossAi.IsDefeated)
+        {
+            cachedBossAi = FindFirstObjectByType<PandaBossAI>();
+        }
+
+        if (cachedBossAi != null)
+        {
+            bossHealthRatio = cachedBossAi.maxHealth <= 0
+                ? 0f
+                : Mathf.Clamp01(cachedBossAi.currentHealth / (float)cachedBossAi.maxHealth);
+            return true;
+        }
+
+        if (cachedPandaHealth == null || cachedPandaHealth.IsDefeated)
+        {
+            cachedPandaHealth = FindFirstObjectByType<PandaHealth>();
+        }
+
+        if (cachedPandaHealth != null)
+        {
+            bossHealthRatio = cachedPandaHealth.MaxHealth <= 0
+                ? 0f
+                : Mathf.Clamp01(cachedPandaHealth.CurrentHealth / (float)cachedPandaHealth.MaxHealth);
+            return true;
+        }
+
+        bossHealthRatio = 1f;
+        return false;
+    }
+
     private bool TryGetAttackStrength(float dragDistance, out AttackStrength strength)
     {
         if (dragDistance <= 0f)
@@ -642,6 +686,7 @@ public class PlayerCombatController : MonoBehaviour
         PlayerUltimateConfig ultimateConfig = GetUltimateConfig();
         float dragDistance = isDragging && hasPointerPosition ? GetAttackDisplacement(lastPointerViewportPosition) : 0f;
         float displacementRatio = isDragging && hasPointerPosition ? GetDisplacementRatio(lastPointerViewportPosition) : 0f;
+        bool hasBossHealth = TryGetBossHealthRatio(out float bossHealthRatio);
 
         return new PlayerCombatHudState
         {
@@ -657,6 +702,10 @@ public class PlayerCombatController : MonoBehaviour
             DisplacementRatio = displacementRatio,
             HitStunReady = charge.Ratio >= hitStunChargeThreshold,
             PlayerHealthRatio = GetPlayerHealthRatio(),
+            PlayerCurrentHealth = GetPlayerCurrentHealth(),
+            PlayerMaxHealth = GetPlayerMaxHealth(),
+            HasBossHealth = hasBossHealth,
+            BossHealthRatio = bossHealthRatio,
             HasUltimateTarget = ultimate.HasTarget,
             UltimateTargetViewportPosition = ultimate.TargetViewportPosition,
             UltimateTargetRadius = ultimateConfig.TargetRadius
