@@ -16,6 +16,7 @@ public sealed class GameplayPauseMenuController : MonoBehaviour
     [Header("Result Screen")]
     [SerializeField] private PlayerHealth playerHealth;
     [SerializeField] private PandaBossAI pandaBoss;
+    [SerializeField] private PandaHealth pandaHealth;
     [SerializeField] private CanvasGroup resultPanel;
     [SerializeField] private Text resultTitleText;
     [SerializeField] private Text resultMessageText;
@@ -27,6 +28,11 @@ public sealed class GameplayPauseMenuController : MonoBehaviour
     [SerializeField] private string defeatMessage = "Player defeated";
     [SerializeField] private bool pauseTimeScaleOnResult = true;
 
+    [Header("Result Transition")]
+    [SerializeField, Min(0f)] private float defeatResultDelay = 0.25f;
+    [SerializeField, Range(0.01f, 1f)] private float resultSlowMotionScale = 0.18f;
+    [SerializeField, Min(0f)] private float resultSlowMotionDuration = 0.35f;
+
     [Header("Result Delay")]
     [SerializeField] private GameObject resultSequenceObject;
     [SerializeField] private Animator resultSequenceAnimator;
@@ -34,11 +40,13 @@ public sealed class GameplayPauseMenuController : MonoBehaviour
     [SerializeField] private string resultSequenceStateName;
     [SerializeField] private bool activateResultSequenceOnVictory;
     [SerializeField, Min(0f)] private float resultFallbackDelay = 1.2f;
+    [SerializeField, Min(0.1f)] private float resultSequenceActivationTimeout = 12f;
     [SerializeField, Min(0.1f)] private float resultAnimationWaitTimeout = 5f;
 
     private bool isPaused;
     private bool resultStarted;
     private bool resultShown;
+    private Coroutine resultSlowMotionCoroutine;
 
     private void Awake()
     {
@@ -65,7 +73,7 @@ public sealed class GameplayPauseMenuController : MonoBehaviour
             return;
         }
 
-        if (pandaBoss != null && pandaBoss.IsDefeated)
+        if (IsBossDefeated())
         {
             BeginResult(true);
         }
@@ -217,6 +225,10 @@ public sealed class GameplayPauseMenuController : MonoBehaviour
         resultStarted = true;
         isPaused = false;
         StopGameplayForResult();
+        if (!victory)
+        {
+            StartResultSlowMotion();
+        }
 
         if (pausePanel != null)
         {
@@ -228,18 +240,27 @@ public sealed class GameplayPauseMenuController : MonoBehaviour
             pauseButton.gameObject.SetActive(false);
         }
 
-        if (!victory)
-        {
-            ShowResult(false);
-            return;
-        }
-
-        StartCoroutine(ShowResultAfterSequence(victory));
+        StartCoroutine(ShowResultAfterTransition(victory));
     }
 
-    private IEnumerator ShowResultAfterSequence(bool victory)
+    private IEnumerator ShowResultAfterTransition(bool victory)
     {
-        yield return WaitForResultSequence(victory);
+        if (victory)
+        {
+            yield return WaitForResultSequence(victory);
+        }
+        else
+        {
+            float delay = Mathf.Max(
+                defeatResultDelay,
+                pauseTimeScaleOnResult ? resultSlowMotionDuration : 0f);
+
+            if (delay > 0f)
+            {
+                yield return new WaitForSecondsRealtime(delay);
+            }
+        }
+
         ShowResult(victory);
     }
 
@@ -271,6 +292,21 @@ public sealed class GameplayPauseMenuController : MonoBehaviour
         if (resultSequenceVideo != null)
         {
             yield return WaitForVideoSequence();
+            yield break;
+        }
+
+        float activeRemaining = Mathf.Max(0.1f, resultSequenceActivationTimeout);
+        while (resultSequenceObject != null
+            && !resultSequenceObject.activeInHierarchy
+            && activeRemaining > 0f)
+        {
+            activeRemaining -= Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        if (resultSequenceObject != null && !resultSequenceObject.activeInHierarchy)
+        {
+            yield return new WaitForSecondsRealtime(resultFallbackDelay);
             yield break;
         }
 
@@ -306,42 +342,61 @@ public sealed class GameplayPauseMenuController : MonoBehaviour
 
     private IEnumerator WaitForVideoSequence()
     {
-        float remaining = resultAnimationWaitTimeout;
-        float elapsedAfterStart = 0f;
-        float targetDuration = resultFallbackDelay;
-        bool started = false;
+        bool completed = false;
+        bool failed = false;
 
-        while (remaining > 0f)
+        void OnLoopPointReached(VideoPlayer videoPlayer)
         {
-            if (resultSequenceObject != null
-                && resultSequenceObject.activeInHierarchy
-                && resultSequenceVideo != null
-                && resultSequenceVideo.isActiveAndEnabled)
-            {
-                if (!started)
-                {
-                    started = true;
+            completed = true;
+        }
 
-                    if (resultSequenceVideo.length > 0.1)
-                    {
-                        targetDuration = Mathf.Min(resultAnimationWaitTimeout, (float)resultSequenceVideo.length);
-                    }
+        void OnErrorReceived(VideoPlayer videoPlayer, string message)
+        {
+            failed = true;
+            Debug.LogWarning($"[GameplayPauseMenuController] Victory video failed: {message}", this);
+        }
 
-                    if (!resultSequenceVideo.isPlaying)
-                    {
-                        resultSequenceVideo.Play();
-                    }
-                }
+        resultSequenceVideo.loopPointReached += OnLoopPointReached;
+        resultSequenceVideo.errorReceived += OnErrorReceived;
 
-                elapsedAfterStart += Time.unscaledDeltaTime;
-                if (elapsedAfterStart >= targetDuration)
-                {
-                    yield break;
-                }
-            }
-
-            remaining -= Time.unscaledDeltaTime;
+        float waitForActiveRemaining = Mathf.Max(0.1f, resultSequenceActivationTimeout);
+        while (resultSequenceVideo != null
+            && (!resultSequenceVideo.isActiveAndEnabled
+                || (resultSequenceObject != null && !resultSequenceObject.activeInHierarchy))
+            && waitForActiveRemaining > 0f)
+        {
+            waitForActiveRemaining -= Time.unscaledDeltaTime;
             yield return null;
+        }
+
+        if (resultSequenceVideo == null)
+        {
+            yield return new WaitForSecondsRealtime(resultFallbackDelay);
+            yield break;
+        }
+
+        if (!resultSequenceVideo.isActiveAndEnabled)
+        {
+            resultSequenceVideo.loopPointReached -= OnLoopPointReached;
+            resultSequenceVideo.errorReceived -= OnErrorReceived;
+            yield return new WaitForSecondsRealtime(resultFallbackDelay);
+            yield break;
+        }
+
+        resultSequenceVideo.Stop();
+        resultSequenceVideo.timeReference = VideoTimeReference.Freerun;
+        resultSequenceVideo.playbackSpeed = 1f;
+        resultSequenceVideo.Play();
+
+        while (resultSequenceVideo != null && resultSequenceVideo.isActiveAndEnabled && !completed && !failed)
+        {
+            yield return null;
+        }
+
+        if (resultSequenceVideo != null)
+        {
+            resultSequenceVideo.loopPointReached -= OnLoopPointReached;
+            resultSequenceVideo.errorReceived -= OnErrorReceived;
         }
     }
 
@@ -372,6 +427,48 @@ public sealed class GameplayPauseMenuController : MonoBehaviour
         if (pauseTimeScaleOnResult)
         {
             Time.timeScale = 0f;
+        }
+    }
+
+    private void StartResultSlowMotion()
+    {
+        if (!pauseTimeScaleOnResult)
+        {
+            return;
+        }
+
+        if (resultSlowMotionCoroutine != null)
+        {
+            StopCoroutine(resultSlowMotionCoroutine);
+        }
+
+        resultSlowMotionCoroutine = StartCoroutine(ResultSlowMotionRoutine());
+    }
+
+    private IEnumerator ResultSlowMotionRoutine()
+    {
+        float startScale = Mathf.Max(Time.timeScale, 0.01f);
+        float targetScale = Mathf.Clamp(resultSlowMotionScale, 0.01f, 1f);
+        float duration = Mathf.Max(0f, resultSlowMotionDuration);
+
+        if (duration <= 0f)
+        {
+            Time.timeScale = targetScale;
+            yield break;
+        }
+
+        float elapsed = 0f;
+        while (elapsed < duration && !resultShown)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            Time.timeScale = Mathf.Lerp(startScale, targetScale, t);
+            yield return null;
+        }
+
+        if (!resultShown)
+        {
+            Time.timeScale = targetScale;
         }
     }
 
@@ -408,6 +505,21 @@ public sealed class GameplayPauseMenuController : MonoBehaviour
         {
             pandaBoss = FindFirstObjectByType<PandaBossAI>(FindObjectsInactive.Include);
         }
+
+        if (pandaHealth == null)
+        {
+            pandaHealth = FindFirstObjectByType<PandaHealth>(FindObjectsInactive.Include);
+        }
+    }
+
+    private bool IsBossDefeated()
+    {
+        if (pandaBoss != null && (pandaBoss.IsDefeated || pandaBoss.currentHealth <= 0))
+        {
+            return true;
+        }
+
+        return pandaHealth != null && pandaHealth.IsDefeated;
     }
 
     private void ResolveResultSequence()
