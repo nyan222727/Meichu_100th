@@ -102,8 +102,7 @@ Boss 會召喚貢丸隕石攻擊玩家所在區域。
 
 * 畫面會被題目 UI 遮擋
 * 玩家需要在時間內完成作答
-* 高機率出現小學加減乘除
-* 低機率出現困難微積分題目
+* 題目為小學加減乘除
 * 若放棄或超時，玩家會受到懲罰
 
 #### 風系統
@@ -143,9 +142,8 @@ Fight
 
 * Unity
 * C#
-* AR Foundation / Mobile AR
-* ShaderLab
-* HLSL
+* AR Foundation
+* Niantic AR 
 * Git / GitHub
 
 ## Project Structure
