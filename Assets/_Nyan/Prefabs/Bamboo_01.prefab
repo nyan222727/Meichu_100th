@@ -150,7 +150,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f6b82f4e00c9954caed50621d2dfacb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  windEffectMultiplier: 1
+  windEffectMultiplier: 3
 --- !u!1001 &2628995610269951255
 PrefabInstance:
   m_ObjectHideFlags: 0
