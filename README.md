@@ -6,7 +6,9 @@
 
 [![MeiChu 100th AR Demo](https://img.youtube.com/vi/MGoLa6ZaCTo/0.jpg)](https://www.youtube.com/watch?v=MGoLa6ZaCTo&feature=youtu.be)
 
-Demo link: https://www.youtube.com/watch?v=MGoLa6ZaCTo&feature=youtu.be
+- [Demo Video](https://www.youtube.com/watch?v=MGoLa6ZaCTo&feature=youtu.be)
+- [Presentation](https://www.canva.com/design/DAHMECs4wME/Hf2pp57WinVhjv9ufUU1zg/edit)
+- [Proposal](https://docs.google.com/document/d/1fG2cSzUZmHsKM9LGJF5av6QZazml-hH8ptSDQdjM91U/edit?tab=t.0)
 
 ## Game Overview
 
